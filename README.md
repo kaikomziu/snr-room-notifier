@@ -5,6 +5,8 @@ Among Us の MOD「SuperNewRoles」のカスタムサーバーで公開部屋が
 > **非公式ツールです。**
 > このアプリは個人が作成したもので、SuperNewRoles 開発チームおよび Innersloth LLC(Among Us)とは関係がなく、承認や支援も受けていません。
 > 不具合や使い方について、SuperNewRoles 公式へ問い合わせないでください。報告は [Issues](https://github.com/kaikomziu/snr-room-notifier/issues) へお願いします。
+>
+> このアプリは AI(Anthropic の Claude Code)を使って作成しています。
 
 ## できること
 
@@ -48,7 +50,7 @@ npm start        # 開発実行
 npm run dist     # インストーラー作成(dist/ に出力)
 ```
 
-Electron 44 / electron-builder 26 で作成しています。
+Electron 44 / electron-builder 26 で作成しています。コードは AI(Claude Code)で作成しています。
 
 ## ライセンス
 
@@ -56,6 +58,7 @@ Electron 44 / electron-builder 26 で作成しています。
 
 ## 更新履歴
 
+- v1.4.2 (2026-09-26) Q&A タブを追加(ゲーム中に通知が出ないとき=Windows の応答不可の説明など)。Windows の通知設定を開くボタン。AI(Claude Code)で作成していることを明記
 - v1.4.1 (2026-09-26) アイコンを独自デザインに変更、GPL-3.0 で公開
 - v1.4.0 (2026-09-26) Among Us.exe を設定して起動できるように。未起動時は起動してから参加。通知の成否を画面に表示
 - v1.3.1 (2026-09-26) 非公式ツールである旨・免責事項を明記

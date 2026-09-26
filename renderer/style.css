@@ -153,6 +153,17 @@ legend { padding: 0 6px; font-weight: 700; }
 .disclaimer { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 8px; color: var(--muted); font-size: 12px; max-width: 40em; }
 .disclaimer p { margin: 6px 0; }
 
+/* Q&A */
+.faq-head { font-size: 13px; color: var(--muted); margin: 16px 4px 8px; }
+.faq-head:first-child { margin-top: 4px; }
+.qa { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; }
+.qa summary { cursor: pointer; padding: 10px 14px; font-weight: 700; }
+.qa[open] summary { border-bottom: 1px solid var(--line); }
+.qa p, .qa ul, .qa .actions { margin: 10px 14px; }
+.qa ul { padding-left: 1.4em; }
+.qa a { color: inherit; }
+.mono { font-family: Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
+
 /* 下部のお知らせ */
 .toast {
   position: fixed; left: 12px; right: 12px; bottom: 12px;

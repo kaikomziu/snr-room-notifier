@@ -9,7 +9,7 @@ let initialized = false;
 
 // ---- タブ ----
 function selectTab(name) {
-  for (const t of ['rooms', 'settings']) {
+  for (const t of ['rooms', 'settings', 'faq']) {
     const on = t === name;
     $(`tab-${t}`).setAttribute('aria-selected', String(on));
     $(`view-${t}`).hidden = !on;
@@ -17,6 +17,7 @@ function selectTab(name) {
 }
 $('tab-rooms').addEventListener('click', () => selectTab('rooms'));
 $('tab-settings').addEventListener('click', () => selectTab('settings'));
+$('tab-faq').addEventListener('click', () => selectTab('faq'));
 
 // ---- お知らせ ----
 // sticky=true のときは自動で消さない(参加処理の進み具合の表示用)
@@ -168,6 +169,7 @@ $('launch-btn').addEventListener('click', async () => {
   toast(r.message, r.ok ? 'info' : 'error');
 });
 $('site-btn').addEventListener('click', () => window.snr.openSite());
+$('faq-notify-settings').addEventListener('click', () => window.snr.openNotifySettings());
 
 window.snr.onState(render);
 window.snr.getState().then(render);

@@ -18,4 +18,5 @@ contextBridge.exposeInMainWorld('snr', {
   refresh: () => ipcRenderer.invoke('refresh'),
   testNotify: () => ipcRenderer.invoke('test-notify'),
   openSite: () => ipcRenderer.invoke('open-site'),
+  openNotifySettings: () => ipcRenderer.invoke('open-notify-settings'),
 });

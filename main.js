@@ -12,6 +12,7 @@
 //   v1.3.1 (2026-09-26) 非公式ツールである旨・免責事項を画面とREADMEに明記
 //   v1.4.0 (2026-09-26) Among Us(SNR)の起動ボタン、未起動時は起動してから参加。通知の失敗を画面に表示、通知アイコンをasar外に配置
 //   v1.4.1 (2026-09-26) アイコンを独自デザインに変更、GPL-3.0でGitHub公開
+//   v1.4.2 (2026-09-26) Q&Aタブを追加(ゲーム中に通知が出ない=Windowsの応答不可の説明など)、Windowsの通知設定を開くボタン、AI(Claude Code)で作成していることを明記
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -20,7 +21,7 @@ const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require
 const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
 
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.4.2';
 const APP_UPDATED = '2026-09-26';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
@@ -393,6 +394,7 @@ ipcMain.handle('set-auto-launch', (_e, v) => { config.autoLaunch = !!v; saveConf
 ipcMain.handle('refresh', () => restartPolling());
 ipcMain.handle('test-notify', () => notify('テスト通知', '通知は正常に表示されています'));
 ipcMain.handle('open-site', () => shell.openExternal(SITE_URL));
+ipcMain.handle('open-notify-settings', () => shell.openExternal('ms-settings:notifications'));
 
 // ---- 起動 ----
 if (!app.requestSingleInstanceLock()) {

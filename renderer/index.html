@@ -20,6 +20,7 @@
   <nav class="tabs" role="tablist">
     <button role="tab" id="tab-rooms" aria-selected="true" aria-controls="view-rooms" type="button">部屋</button>
     <button role="tab" id="tab-settings" aria-selected="false" aria-controls="view-settings" type="button">設定</button>
+    <button role="tab" id="tab-faq" aria-selected="false" aria-controls="view-faq" type="button">Q&amp;A</button>
   </nav>
 
   <main>
@@ -66,9 +67,75 @@
         <p>このアプリは個人が作成した非公式ツールです。SuperNewRoles 開発チーム、Innersloth LLC(Among Us)とは関係がなく、承認や支援も受けていません。</p>
         <p>アプリの不具合や使い方について、SuperNewRoles 公式に問い合わせないでください。不具合の報告は <a href="https://github.com/kaikomziu/snr-room-notifier/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお願いします。</p>
         <p>部屋の情報は SuperNewRoles の公開ルーム一覧と同じ仕組みで取得しています。公式側の仕様変更により、予告なく使えなくなることがあります。</p>
+        <p>このアプリは AI(Anthropic の Claude Code)を使って作成しています。</p>
         <p>本アプリは無保証で提供されます。利用により生じた問題について、作成者は責任を負いません。</p>
       </div>
       <p class="version" id="version"></p>
+    </section>
+
+    <section id="view-faq" role="tabpanel" aria-labelledby="tab-faq" hidden>
+      <h2 class="faq-head">通知</h2>
+      <details class="qa" open>
+        <summary>Among Usをプレイ中に通知が出ない</summary>
+        <p>Windowsの「応答不可」が、ゲーム中に自動でオンになっている可能性が高いです。応答不可の間は通知が画面に出ず、通知センター(画面右下の日時をクリック)にだけ入ります。</p>
+        <p>「設定」→「システム」→「通知」→「応答不可を自動的にオンにする」で、次のチェックを外してください。</p>
+        <ul>
+          <li>ゲームをプレイしているとき</li>
+          <li>全画面モードでアプリを使用しているとき</li>
+        </ul>
+        <div class="actions tight"><button class="ghost small" id="faq-notify-settings" type="button">Windowsの通知設定を開く</button></div>
+      </details>
+      <details class="qa">
+        <summary>通知がまったく出ない</summary>
+        <p>次の順に確認してください。</p>
+        <ul>
+          <li>「設定」タブの「新しい部屋が開かれたら通知する」がオンになっているか</li>
+          <li>Windowsの「設定」→「システム」→「通知」で、通知全体と「SNR Room Notifier」がオンになっているか</li>
+          <li>画面上部が「一時停止中」になっていないか</li>
+        </ul>
+        <p>「設定」タブの「テスト通知を出す」で確認できます。結果は同じ画面に表示されます。</p>
+      </details>
+      <details class="qa">
+        <summary>アプリを起動したとき、すでに開いていた部屋が通知されない</summary>
+        <p>起動直後や一時停止から再開した直後は、通知の連発を防ぐため、その時点の部屋を記録するだけにしています。すでに開いている部屋は「部屋」タブの一覧から参加できます。</p>
+      </details>
+      <details class="qa">
+        <summary>部屋が開いてから通知が来るまで少し遅れる</summary>
+        <p>サーバーの負荷を考えて、部屋の一覧は10秒ごとに確認しています。そのため、通知が最大10秒ほど遅れることがあります。</p>
+      </details>
+      <details class="qa">
+        <summary>通知が1件にまとめられた</summary>
+        <p>一度に4件以上の部屋が開かれたときは、通知を1件にまとめます。クリックすると一覧が開きます。</p>
+      </details>
+      <details class="qa">
+        <summary>非公開の部屋や、自分で立てた部屋は通知される?</summary>
+        <p>非公開の部屋は一覧に出ないため通知されません。自分で立てた部屋でも、公開していれば通知されます。</p>
+      </details>
+
+      <h2 class="faq-head">参加</h2>
+      <details class="qa">
+        <summary>「参加」を押しても参加できない</summary>
+        <p>参加するには、SuperNewRolesを入れたAmong Usが起動している必要があります。起動していないときは「設定」タブで選んだAmong Us.exeを自動で起動し、読み込みが終わるのを待ってから参加します。初回はコスメのダウンロードなどで数分かかることがあります。</p>
+        <p>参加できる部屋は「募集中」で満員でない部屋だけです。開始中や満員の部屋は「参加」を押せません。</p>
+      </details>
+      <details class="qa">
+        <summary>「すでにゲームに参加しています」と出る</summary>
+        <p>Among Usがほかの部屋(ロビー)に入っているときや、起動してすぐでまだ読み込み中のときに出ます。部屋から抜けてタイトル画面に戻ってから、もう一度「参加」を押してください。</p>
+      </details>
+      <details class="qa">
+        <summary>Among Us.exe はどこにある?</summary>
+        <p>SuperNewRolesを入れたフォルダの中にあります。Steamで入れた場合は、たとえば <span class="mono">C:\Program Files (x86)\Steam\steamapps\common</span> の中の、SuperNewRolesを入れたAmong Usのフォルダです。</p>
+      </details>
+
+      <h2 class="faq-head">その他</h2>
+      <details class="qa">
+        <summary>画面を閉じたのに動いている / 終了したい</summary>
+        <p>画面を閉じてもタスクトレイで監視を続けます。完全に終了するときは、タスクトレイのアイコンを右クリックして「終了」を選んでください。</p>
+      </details>
+      <details class="qa">
+        <summary>不具合を見つけた</summary>
+        <p>このアプリは非公式ツールです。SuperNewRoles公式には問い合わせず、<a href="https://github.com/kaikomziu/snr-room-notifier/issues" target="_blank" rel="noopener">GitHub の Issues</a> へ報告してください。</p>
+      </details>
     </section>
   </main>
 
