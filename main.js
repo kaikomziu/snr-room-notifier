@@ -19,6 +19,7 @@
 //   v1.6.0 (2026-09-27) お気に入り/ミュートのホストを追加(お気に入りは条件に関係なく通知、ミュートは通知しない、お気に入りだけ通知する設定)
 //   v1.7.0 (2026-09-27) 満員の部屋に空きが出たら通知する設定を追加(同じ部屋は2分に1回まで)
 //   v1.8.0 (2026-09-27) 部屋の通知に「参加」「コードをコピー」「一覧を開く」ボタンを追加
+//   v1.9.0 (2026-09-27) 静かな時間帯(指定した時間は通知しない、日またぎ対応)を追加
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
@@ -26,9 +27,9 @@ const fs = require('fs');
 const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require('./lib/rooms');
 const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
-const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify } = require('./lib/filter');
+const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify, defaultQuiet, sanitizeQuiet, isQuietNow } = require('./lib/filter');
 
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
@@ -46,7 +47,7 @@ const assetPath = (name) => path.join(__dirname, 'assets', name).replace(`app.as
 
 // ---- 設定 ----
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
-const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false };
+const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false, quiet: defaultQuiet };
 let config = structuredClone(defaultConfig);
 
 function loadConfig() {
@@ -55,6 +56,7 @@ function loadConfig() {
     config = { ...defaultConfig, ...saved, regions: { ...defaultConfig.regions, ...saved.regions } };
     config.filter = sanitizeFilter(config.filter);
     config.hosts = sanitizeHosts(config.hosts);
+    config.quiet = sanitizeQuiet(config.quiet);
   } catch (_) {
     // 初回起動時はファイルが無いので既定値のまま
   }
@@ -116,7 +118,8 @@ function notify(title, body, onClick = showWindow, buttons = []) {
 
 // kind: 'new' = 新しく条件に合った部屋、'vacancy' = 満員だった部屋に空きが出た
 function notifyNewRooms(rooms, kind = 'new') {
-  if (!config.notify || rooms.length === 0) return;
+  // 静かな時間帯に開いた部屋は、時間帯が明けても通知しない(一覧には表示される)
+  if (!config.notify || rooms.length === 0 || isQuietNow(config.quiet)) return;
   if (rooms.length > MAX_INDIVIDUAL) {
     const names = rooms.slice(0, 5).map((r) => r.roomName).join('、');
     const head = kind === 'vacancy' ? `${rooms.length}件の部屋に空きが出ました` : `新しい部屋が${rooms.length}件開かれました`;
@@ -344,6 +347,13 @@ function setNotifyVacancy(value) {
   sendState();
 }
 
+function setQuiet(value) {
+  config.quiet = sanitizeQuiet(value);
+  saveConfig();
+  updateTray();
+  sendState();
+}
+
 function setShowAll(value) {
   config.showAll = !!value;
   saveConfig();
@@ -365,9 +375,10 @@ function statusInfo() {
     .map((k) => regionState[k].error);
   if (errors.length) return { kind: 'error', text: `取得できませんでした: ${errors.join(' / ')}` };
   if (!Object.values(config.regions).some(Boolean)) return { kind: 'error', text: 'リージョンが1つも選ばれていません' };
+  const quiet = isQuietNow(config.quiet) ? `(静かな時間帯 〜${config.quiet.end})` : '';
   return {
     kind: 'ok',
-    text: lastChecked ? `監視中 ${lastChecked.toLocaleTimeString('ja-JP')} に確認` : '監視を開始しています',
+    text: lastChecked ? `監視中 ${lastChecked.toLocaleTimeString('ja-JP')} に確認${quiet}` : '監視を開始しています',
   };
 }
 
@@ -471,6 +482,7 @@ ipcMain.handle('set-show-all', (_e, v) => setShowAll(v));
 ipcMain.handle('set-filter', (_e, v) => setFilter(v));
 ipcMain.handle('set-hosts', (_e, v) => setHosts(v));
 ipcMain.handle('set-notify-vacancy', (_e, v) => setNotifyVacancy(v));
+ipcMain.handle('set-quiet', (_e, v) => setQuiet(v));
 ipcMain.handle('choose-game-path', () => chooseGamePath());
 ipcMain.handle('launch-game', () => startGame());
 ipcMain.handle('set-auto-launch', (_e, v) => { config.autoLaunch = !!v; saveConfig(); sendState(); });

@@ -52,6 +52,13 @@
         <legend>動作</legend>
         <label class="check"><input type="checkbox" id="notify-toggle"> 新しい部屋が開かれたら通知する</label>
         <label class="check"><input type="checkbox" id="vacancy-toggle"> 満員の部屋に空きが出たら通知する</label>
+        <div class="quiet-row">
+          <label class="check"><input type="checkbox" id="quiet-toggle"> 静かな時間帯は通知しない</label>
+          <span class="inline">
+            <input type="time" id="quiet-start" class="num time" aria-label="開始時刻"> 〜
+            <input type="time" id="quiet-end" class="num time" aria-label="終了時刻">
+          </span>
+        </div>
         <label class="check"><input type="checkbox" id="show-all-setting"> 参加できない部屋も一覧に表示する(開始中・満員など)</label>
         <label class="check"><input type="checkbox" id="login-toggle"> Windows起動時に自動で起動する</label>
         <p class="note" id="login-note" hidden>インストール版でのみ設定できます。</p>
@@ -144,6 +151,10 @@
       <details class="qa">
         <summary>満員の部屋に入りたい</summary>
         <p>「設定」タブの「満員の部屋に空きが出たら通知する」をオンにすると、募集中で満員だった部屋に空きが出たときに通知します。同じ部屋の通知は2分に1回までです。お気に入り・ミュート・通知の条件も反映されます。</p>
+      </details>
+      <details class="qa">
+        <summary>夜中は通知してほしくない</summary>
+        <p>「設定」タブの「静かな時間帯は通知しない」をオンにして、時間を指定してください。23:00〜07:00 のように日をまたぐ指定もできます。静かな時間帯の間も監視は続き、部屋は一覧に表示されます(時間帯が明けてからまとめて通知はしません)。</p>
       </details>
       <details class="qa">
         <summary>通知が1件にまとめられた</summary>

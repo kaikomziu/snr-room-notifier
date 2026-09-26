@@ -129,6 +129,11 @@ function renderSettings() {
   $('notify-toggle').checked = state.config.notify;
   $('vacancy-toggle').checked = state.config.notifyVacancy;
   $('vacancy-toggle').disabled = !state.config.notify;
+  $('quiet-toggle').checked = state.config.quiet.enabled;
+  for (const k of ['start', 'end']) {
+    const input = $(`quiet-${k}`);
+    if (document.activeElement !== input) input.value = state.config.quiet[k];
+  }
   $('show-all').checked = state.config.showAll;
   $('show-all-setting').checked = state.config.showAll;
   $('login-toggle').checked = state.login.enabled;
@@ -251,6 +256,13 @@ $('show-all').addEventListener('change', (e) => window.snr.setShowAll(e.target.c
 $('show-all-setting').addEventListener('change', (e) => window.snr.setShowAll(e.target.checked));
 $('notify-toggle').addEventListener('change', (e) => window.snr.setNotify(e.target.checked));
 $('vacancy-toggle').addEventListener('change', (e) => window.snr.setNotifyVacancy(e.target.checked));
+for (const id of ['quiet-toggle', 'quiet-start', 'quiet-end']) {
+  $(id).addEventListener('change', () => window.snr.setQuiet({
+    enabled: $('quiet-toggle').checked,
+    start: $('quiet-start').value,
+    end: $('quiet-end').value,
+  }));
+}
 $('login-toggle').addEventListener('change', (e) => window.snr.setLogin(e.target.checked));
 $('test-btn').addEventListener('click', () => window.snr.testNotify());
 $('choose-path-btn').addEventListener('click', () => window.snr.chooseGamePath());

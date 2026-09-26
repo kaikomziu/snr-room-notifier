@@ -170,6 +170,8 @@ legend { padding: 0 6px; font-weight: 700; }
 .inline { display: flex; align-items: center; gap: 6px; font-size: 13px; }
 .num, .text { border: 1px solid var(--line); border-radius: 6px; background: var(--hull); padding: 4px 8px; }
 .num { width: 5em; }
+.num.time { width: 7em; }
+.quiet-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
 .text { width: 100%; min-width: 0; }
 
 /* お気に入り・ミュート */
