@@ -50,6 +50,8 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - PC 用常駐アプリなのでスマホ対応は不要
 
 ## リリース手順
+**バージョンを上げたら、1バージョンごとに必ず Release を作る**(まとめない)。アプリのアップデート確認は releases/latest を見るので、過去の版を後から Release するときは `--latest=false` と `--target <フルSHA>` を付ける。
+
 1. 上の4か所のバージョンと日付を更新
 2. `npm run dist` でインストーラー作成(dist/)
 3. `git add -A` → commit → `git push origin main`
@@ -58,7 +60,6 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - Windows では初回に `npm install` が必要(node_modules は Linux ビルド時のもので無かった)
 
 ## 未確認・既知の懸念
-- v1.4.3〜v1.10.0 は push のみで Release は作っていない(v1.11.0 でまとめて Release)
 - Linux 上でビルドしたため Windows 実機での動作確認が不十分。特に:
   - 通知: v1.4.0 でアイコンを asar 外に置いたことで直ったか(設定タブに最後の通知の成否を表示している)
   - 起動→そのまま参加の流れ: 起動待ち最大180秒 → 8秒待機 → 最大60秒再試行、の待ち時間が実機で合っているか
