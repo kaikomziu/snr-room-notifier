@@ -18,8 +18,9 @@
 //   v1.5.0 (2026-09-26) 通知の条件を追加(マップ・インポスター数・人数・部屋名キーワード)。条件に初めて合った時点で通知
 //   v1.6.0 (2026-09-27) お気に入り/ミュートのホストを追加(お気に入りは条件に関係なく通知、ミュートは通知しない、お気に入りだけ通知する設定)
 //   v1.7.0 (2026-09-27) 満員の部屋に空きが出たら通知する設定を追加(同じ部屋は2分に1回まで)
+//   v1.8.0 (2026-09-27) 部屋の通知に「参加」「コードをコピー」「一覧を開く」ボタンを追加
 
-const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require('./lib/rooms');
@@ -27,7 +28,7 @@ const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
 const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify } = require('./lib/filter');
 
-const APP_VERSION = '1.7.0';
+const APP_VERSION = '1.8.0';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
@@ -90,15 +91,22 @@ let lastNotify = null;           // 最後に出そうとした通知の結果(�
 const activeNotifications = new Set(); // GCで通知のクリックハンドラが消えないよう参照を保持
 
 // ---- 通知 ----
-// onClick 省略時はウィンドウを開く
-function notify(title, body, onClick = showWindow) {
+// onClick 省略時はウィンドウを開く。buttons: [{ text, onClick }] 通知に並べるボタン
+function notify(title, body, onClick = showWindow, buttons = []) {
   if (!Notification.isSupported()) {
     lastNotify = { time: Date.now(), ok: false, message: 'このPCでは通知が使えません' };
     sendState();
     return;
   }
-  const n = new Notification({ title, body, icon: assetPath('icon.png') });
+  const n = new Notification({
+    title, body, icon: assetPath('icon.png'),
+    actions: buttons.map((b) => ({ type: 'button', text: b.text })),
+  });
   n.on('click', onClick);
+  n.on('action', (details) => {
+    const button = buttons[details.actionIndex];
+    if (button) button.onClick();
+  });
   n.on('show', () => { lastNotify = { time: Date.now(), ok: true, message: title }; sendState(); });
   n.on('failed', (_e, error) => { lastNotify = { time: Date.now(), ok: false, message: String(error) }; sendState(); });
   n.on('close', () => activeNotifications.delete(n));
@@ -121,7 +129,12 @@ function notifyNewRooms(rooms, kind = 'new') {
     notify(
       `${head}${r.roomName}`,
       `コード ${r.code} / ${r.map} / ${r.players}人 / インポスター${r.impostors} / ${r.region}\nクリックで参加`,
-      () => requestJoin(r.key)
+      () => requestJoin(r.key),
+      [
+        { text: '参加', onClick: () => requestJoin(r.key) },
+        { text: 'コードをコピー', onClick: () => clipboard.writeText(r.code) },
+        { text: '一覧を開く', onClick: showWindow },
+      ]
     );
   }
 }

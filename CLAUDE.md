@@ -3,7 +3,7 @@
 Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部屋が開かれたら Windows 通知を出し、通知や一覧からそのまま参加できる Windows 常駐アプリ(Electron)。
 
 - GitHub: https://github.com/kaikomziu/snr-room-notifier(public、main ブランチ、GPL-3.0-only)
-- 現在: v1.7.0(2026-09-27)
+- 現在: v1.8.0(2026-09-27)
 - 技術: Electron 44 / electron-builder 26(NSIS、oneClick、per-user)。ランタイム依存パッケージなし
 - 起動: `npm start` / ビルド: `npm run dist`(dist/ に出力)
 
