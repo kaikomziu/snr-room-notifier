@@ -15,6 +15,7 @@
 //   v1.4.2 (2026-09-26) Q&Aタブを追加(ゲーム中に通知が出ない=Windowsの応答不可の説明など)、Windowsの通知設定を開くボタン、AI(Claude Code)で作成していることを明記
 //   v1.4.3 (2026-09-26) マップ名が「Map Fungle」のように表示される不具合を修正(APIのMapIdが名前で返る場合に対応)
 //   v1.4.4 (2026-09-26) 起動確認をTCP接続だけで行うように変更(MOD側のログにエラーが残らない)
+//   v1.5.0 (2026-09-26) 通知の条件を追加(マップ・インポスター数・人数・部屋名キーワード)。条件に初めて合った時点で通知
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -22,8 +23,9 @@ const fs = require('fs');
 const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require('./lib/rooms');
 const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
+const { FILTER_MAPS, defaultFilter, sanitizeFilter, matchesFilter, filterIsActive } = require('./lib/filter');
 
-const APP_VERSION = '1.4.4';
+const APP_VERSION = '1.5.0';
 const APP_UPDATED = '2026-09-26';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
@@ -40,13 +42,14 @@ const assetPath = (name) => path.join(__dirname, 'assets', name).replace(`app.as
 
 // ---- 設定 ----
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
-const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true };
+const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter };
 let config = structuredClone(defaultConfig);
 
 function loadConfig() {
   try {
     const saved = JSON.parse(fs.readFileSync(configPath(), 'utf8'));
     config = { ...defaultConfig, ...saved, regions: { ...defaultConfig.regions, ...saved.regions } };
+    config.filter = sanitizeFilter(config.filter);
   } catch (_) {
     // 初回起動時はファイルが無いので既定値のまま
   }
@@ -61,11 +64,13 @@ function saveConfig() {
 }
 
 // ---- 状態 ----
-// seen: 既に見たルームのキー。初回取得時は通知せず記録だけする(起動直後の通知連打防止)
+// seen: 前回の取得で一覧にあったルームのキー
+// notified: 通知済み(または通知しないと決めた)ルームのキー。通知の条件に初めて合った時点で通知する。
+//   初回取得時は条件に合う部屋を記録だけする(起動直後の通知連打防止)
 // rooms: 画面表示用の最新ルーム一覧
 const regionState = {};
 for (const key of Object.keys(REGIONS)) {
-  regionState[key] = { seen: new Set(), initialized: false, error: null, rooms: [] };
+  regionState[key] = { seen: new Set(), notified: new Set(), initialized: false, error: null, rooms: [] };
 }
 const roomIndex = new Map(); // key -> { regionKey, game } 参加時に元データを引くため
 
@@ -199,10 +204,14 @@ async function checkRegion(regionKey) {
       current.add(key);
       rooms.push(room);
       roomIndex.set(key, { regionKey, game: g });
-      if (st.initialized && !st.seen.has(key) && Number(g.GameState) === STATE_RECRUITING) fresh.push(room);
+      if (room.gameState === STATE_RECRUITING && !st.notified.has(key) && matchesFilter(room, config.filter)) {
+        st.notified.add(key);
+        if (st.initialized) fresh.push(room);
+      }
     }
     // 消えたルームは忘れる(同じコードで再度開かれたら再通知される)
     for (const key of st.seen) if (!current.has(key)) roomIndex.delete(key);
+    for (const key of st.notified) if (!current.has(key)) st.notified.delete(key);
     st.seen = current;
     st.rooms = rooms;
     st.initialized = true;
@@ -234,6 +243,7 @@ function resetRegion(key) {
   const st = regionState[key];
   for (const k of st.seen) roomIndex.delete(k);
   st.seen = new Set();
+  st.notified = new Set();
   st.rooms = [];
   st.initialized = false;
   st.error = null;
@@ -264,6 +274,18 @@ function setRegion(key, value) {
 
 function setNotify(value) {
   config.notify = !!value;
+  saveConfig();
+  sendState();
+}
+
+// 条件を変えた直後に、今ある部屋がまとめて通知されないよう、条件に合う部屋は通知済み扱いにする
+function setFilter(value) {
+  config.filter = sanitizeFilter(value);
+  for (const st of Object.values(regionState)) {
+    for (const room of st.rooms) {
+      if (room.gameState === STATE_RECRUITING && matchesFilter(room, config.filter)) st.notified.add(room.key);
+    }
+  }
   saveConfig();
   sendState();
 }
@@ -310,6 +332,8 @@ function snapshot() {
     lastNotify,
     gamePathProblem: config.gamePath ? checkExePath(config.gamePath) : null,
     config,
+    filterActive: filterIsActive(config.filter),
+    filterMaps: FILTER_MAPS,
     regions: Object.entries(REGIONS).map(([key, r]) => ({ key, label: r.label })),
     login: { available: app.isPackaged, enabled: app.getLoginItemSettings({ args: [HIDDEN_ARG] }).openAtLogin },
   };
@@ -390,6 +414,7 @@ ipcMain.handle('set-region', (_e, key, v) => setRegion(key, v));
 ipcMain.handle('set-notify', (_e, v) => setNotify(v));
 ipcMain.handle('set-login', (_e, v) => setLogin(v));
 ipcMain.handle('set-show-all', (_e, v) => setShowAll(v));
+ipcMain.handle('set-filter', (_e, v) => setFilter(v));
 ipcMain.handle('choose-game-path', () => chooseGamePath());
 ipcMain.handle('launch-game', () => startGame());
 ipcMain.handle('set-auto-launch', (_e, v) => { config.autoLaunch = !!v; saveConfig(); sendState(); });

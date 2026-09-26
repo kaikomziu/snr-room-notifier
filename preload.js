@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('snr', {
   setNotify: (v) => ipcRenderer.invoke('set-notify', v),
   setLogin: (v) => ipcRenderer.invoke('set-login', v),
   setShowAll: (v) => ipcRenderer.invoke('set-show-all', v),
+  setFilter: (v) => ipcRenderer.invoke('set-filter', v),
   chooseGamePath: () => ipcRenderer.invoke('choose-game-path'),
   launchGame: () => ipcRenderer.invoke('launch-game'),
   setAutoLaunch: (v) => ipcRenderer.invoke('set-auto-launch', v),

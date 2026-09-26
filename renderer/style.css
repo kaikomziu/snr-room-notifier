@@ -153,6 +153,18 @@ legend { padding: 0 6px; font-weight: 700; }
 .disclaimer { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 8px; color: var(--muted); font-size: 12px; max-width: 40em; }
 .disclaimer p { margin: 6px 0; }
 
+/* 通知の条件 */
+.filter-row { display: grid; grid-template-columns: 6.5em 1fr; gap: 8px; align-items: center; }
+.filter-label { color: var(--muted); font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 13px; }
+.chip:has(input:checked) { border-color: var(--crew); background: color-mix(in srgb, var(--crew) 10%, transparent); }
+.chip input { accent-color: var(--crew); margin: 0; }
+.inline { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.num, .text { border: 1px solid var(--line); border-radius: 6px; background: var(--hull); padding: 4px 8px; }
+.num { width: 5em; }
+.text { width: 100%; min-width: 0; }
+
 /* Q&A */
 .faq-head { font-size: 13px; color: var(--muted); margin: 16px 4px 8px; }
 .faq-head:first-child { margin-top: 4px; }

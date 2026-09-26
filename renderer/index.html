@@ -55,6 +55,31 @@
         <label class="check"><input type="checkbox" id="login-toggle"> Windows起動時に自動で起動する</label>
         <p class="note" id="login-note" hidden>インストール版でのみ設定できます。</p>
       </fieldset>
+      <fieldset>
+        <legend>通知の条件</legend>
+        <p class="note">条件に合った部屋だけ通知します。何も選ばない項目は、すべてが対象になります。</p>
+        <div class="filter-row">
+          <span class="filter-label">マップ</span>
+          <div class="chips" id="filter-maps"></div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">インポスター</span>
+          <div class="chips" id="filter-impostors">
+            <label class="chip"><input type="checkbox" value="1"> 1人</label>
+            <label class="chip"><input type="checkbox" value="2"> 2人</label>
+            <label class="chip"><input type="checkbox" value="3"> 3人以上</label>
+          </div>
+        </div>
+        <div class="filter-row">
+          <label class="filter-label" for="filter-min">人数</label>
+          <div class="inline"><input type="number" id="filter-min" min="0" max="100" step="1" class="num"> 人以上になったら通知</div>
+        </div>
+        <div class="filter-row">
+          <label class="filter-label" for="filter-keywords">部屋名</label>
+          <input type="text" id="filter-keywords" class="text" placeholder="例: 初心者 身内(空白で区切るとどれか1つ)">
+        </div>
+        <div class="actions tight"><button class="ghost small" id="filter-clear" type="button">条件をすべて解除</button></div>
+      </fieldset>
       <p class="note" id="notify-status">まだ通知は出ていません。</p>
       <div class="actions">
         <button class="ghost" id="test-btn" type="button">テスト通知を出す</button>
@@ -106,6 +131,11 @@
       <details class="qa">
         <summary>通知が1件にまとめられた</summary>
         <p>一度に4件以上の部屋が開かれたときは、通知を1件にまとめます。クリックすると一覧が開きます。</p>
+      </details>
+      <details class="qa">
+        <summary>一部の部屋しか通知されない</summary>
+        <p>「設定」タブの「通知の条件」で、マップ・インポスター・人数・部屋名を絞り込んでいると、条件に合う部屋だけ通知します。「条件をすべて解除」で元に戻せます。</p>
+        <p>人数の条件は「その人数に達した時点」で通知します。開いた直後は条件に合わなくても、人が集まれば通知されます。</p>
       </details>
       <details class="qa">
         <summary>非公開の部屋や、自分で立てた部屋は通知される?</summary>

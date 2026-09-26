@@ -120,6 +120,7 @@ function renderSettings() {
   $('game-path-problem').textContent = state.gamePathProblem || '';
   $('game-path-problem').hidden = !state.gamePathProblem;
   $('auto-launch-toggle').checked = state.config.autoLaunch;
+  renderFilter();
   const n = state.lastNotify;
   $('notify-status').textContent = !n
     ? 'まだ通知は出ていません。'
@@ -127,6 +128,37 @@ function renderSettings() {
       ? `最後の通知: ${new Date(n.time).toLocaleTimeString('ja-JP')} に表示しました`
       : `最後の通知: ${new Date(n.time).toLocaleTimeString('ja-JP')} に失敗しました(${n.message})`;
   $('version').textContent = `v${state.version}(${state.updated} 更新)`;
+}
+
+// ---- 通知の条件 ----
+function renderFilter() {
+  const f = state.config.filter;
+  const maps = $('filter-maps');
+  if (!maps.childElementCount) {
+    for (const m of state.filterMaps) {
+      const label = el('label', 'chip');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = m;
+      label.append(input, ` ${m}`);
+      maps.append(label);
+    }
+  }
+  for (const input of maps.querySelectorAll('input')) input.checked = f.maps.includes(input.value);
+  for (const input of $('filter-impostors').querySelectorAll('input')) input.checked = f.impostors.includes(Number(input.value));
+  // 入力中の欄は書き換えない
+  if (document.activeElement !== $('filter-min')) $('filter-min').value = f.minPlayers || '';
+  if (document.activeElement !== $('filter-keywords')) $('filter-keywords').value = f.keywords;
+}
+
+function readFilter() {
+  const checked = (id) => [...$(id).querySelectorAll('input:checked')].map((i) => i.value);
+  return {
+    maps: checked('filter-maps'),
+    impostors: checked('filter-impostors').map(Number),
+    minPlayers: Number($('filter-min').value) || 0,
+    keywords: $('filter-keywords').value,
+  };
 }
 
 function render(s) {
@@ -163,6 +195,10 @@ $('notify-toggle').addEventListener('change', (e) => window.snr.setNotify(e.targ
 $('login-toggle').addEventListener('change', (e) => window.snr.setLogin(e.target.checked));
 $('test-btn').addEventListener('click', () => window.snr.testNotify());
 $('choose-path-btn').addEventListener('click', () => window.snr.chooseGamePath());
+for (const id of ['filter-maps', 'filter-impostors', 'filter-min', 'filter-keywords']) {
+  $(id).addEventListener('change', () => window.snr.setFilter(readFilter()));
+}
+$('filter-clear').addEventListener('click', () => window.snr.setFilter({}));
 $('auto-launch-toggle').addEventListener('change', (e) => window.snr.setAutoLaunch(e.target.checked));
 $('launch-btn').addEventListener('click', async () => {
   const r = await window.snr.launchGame();
