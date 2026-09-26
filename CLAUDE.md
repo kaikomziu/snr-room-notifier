@@ -3,7 +3,7 @@
 Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部屋が開かれたら Windows 通知を出し、通知や一覧からそのまま参加できる Windows 常駐アプリ(Electron)。
 
 - GitHub: https://github.com/kaikomziu/snr-room-notifier(public、main ブランチ、GPL-3.0-only)
-- 現在: v1.4.3(2026-09-26)
+- 現在: v1.4.4(2026-09-26)
 - 技術: Electron 44 / electron-builder 26(NSIS、oneClick、per-user)。ランタイム依存パッケージなし
 - 起動: `npm start` / ビルド: `npm run dist`(dist/ に出力)
 
@@ -12,7 +12,7 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - `preload.js` — contextBridge で `window.snr` を公開(contextIsolation / sandbox 有効)
 - `lib/rooms.js` — ルーム一覧API取得、ルームキー作成、ルームコード変換、表示用データ作成
 - `lib/join.js` — MOD のローカル参加APIへの参加リクエスト(AES-128-CBC 暗号化)
-- `lib/game.js` — Among Us.exe 起動、MOD ローカルAPIの起動確認
+- `lib/game.js` — Among Us.exe 起動、MOD ローカルAPIの起動確認(TCP接続のみ)
 - `renderer/index.html` / `style.css` / `app.js` — 画面(部屋タブ・設定タブ)。CSP は `'self'` のみ
 - `assets/` — 独自デザインのアイコン(ベル+赤ドット)。Windows 通知が asar 内画像を読めないため package.json の `asarUnpack` で asar 外に置いている
 - `publish.bat` — 初回公開用(.gitignore 済み、今後は使わない)。`release/` も .gitignore 済み
@@ -57,4 +57,4 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - Linux 上でビルドしたため Windows 実機での動作確認が不十分。特に:
   - 通知: v1.4.0 でアイコンを asar 外に置いたことで直ったか(設定タブに最後の通知の成否を表示している)
   - 起動→そのまま参加の流れ: 起動待ち最大180秒 → 8秒待機 → 最大60秒再試行、の待ち時間が実機で合っているか
-- 起動確認でパラメータなしの joinGame を叩いているため、MOD 側ログにエラーが残る
+- (v1.4.4で解消)起動確認はパラメータなし joinGame ではなく、127.0.0.1:49152 への TCP 接続可否だけで判定している(HTTP は送らない)

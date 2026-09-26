@@ -14,6 +14,7 @@
 //   v1.4.1 (2026-09-26) アイコンを独自デザインに変更、GPL-3.0でGitHub公開
 //   v1.4.2 (2026-09-26) Q&Aタブを追加(ゲーム中に通知が出ない=Windowsの応答不可の説明など)、Windowsの通知設定を開くボタン、AI(Claude Code)で作成していることを明記
 //   v1.4.3 (2026-09-26) マップ名が「Map Fungle」のように表示される不具合を修正(APIのMapIdが名前で返る場合に対応)
+//   v1.4.4 (2026-09-26) 起動確認をTCP接続だけで行うように変更(MOD側のログにエラーが残らない)
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -22,7 +23,7 @@ const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require
 const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
 
-const APP_VERSION = '1.4.3';
+const APP_VERSION = '1.4.4';
 const APP_UPDATED = '2026-09-26';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
