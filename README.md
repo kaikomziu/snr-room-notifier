@@ -13,7 +13,10 @@ Among Us の MOD「SuperNewRoles」のカスタムサーバーで公開部屋が
 - SuperNewRoles Tokyo / US East で新しい募集中の部屋が開かれたら Windows に通知
 - 通知をクリック、または一覧の「参加」で、そのまま部屋に参加
 - Among Us が起動していなければ、起動 → 読み込み待ち → 参加まで自動で実行
-- 部屋一覧の表示(参加できない部屋を含めるかは設定で切り替え)
+- 部屋一覧の表示・検索・並べ替え(参加できない部屋を含めるかは設定で切り替え)
+- 通知の条件(マップ・インポスター数・〇人以上・部屋名)、お気に入り/ミュートのホスト、満員の部屋に空きが出たときの通知、静かな時間帯
+- 通知の「参加」「コードをコピー」「一覧を開く」ボタン
+- 新しいバージョンのお知らせ(GitHub の Releases を確認)
 - 画面を閉じてもタスクトレイで監視を継続、Windows 起動時の自動起動
 
 ## インストール
@@ -33,7 +36,8 @@ Among Us の MOD「SuperNewRoles」のカスタムサーバーで公開部屋が
 ## 仕組み
 
 - 部屋の情報: SuperNewRoles 公式ルーム一覧(https://cs-web.supernewroles.com/)と同じ API(`https://cs.supernewroles.com/api/games/all_for_web`、US East は `cs-useast`)を 10 秒間隔で取得し、前回なかった募集中の部屋を通知します。起動直後の 1 回目は記録のみで通知しません。
-- 部屋への参加: SuperNewRoles MOD が PC 内で待ち受けているローカル API(`http://localhost:49152/joinGame`)に、公式の参加ボタンと同じ形式で参加リクエストを送ります。
+- 部屋への参加: SuperNewRoles MOD が PC 内で待ち受けているローカル API(`http://localhost:49152/joinGame`)に、公式の参加ボタンと同じ形式で参加リクエストを送ります。起動しているかの確認は、このポートに TCP 接続できるかだけで判定します。
+- アップデートの確認: GitHub の Releases(`https://api.github.com/repos/kaikomziu/snr-room-notifier/releases/latest`)を 6 時間ごとに確認します。SuperNewRoles のサーバーには送りません。設定でオフにできます。
 
 ## 注意事項
 
@@ -58,6 +62,7 @@ Electron 44 / electron-builder 26 で作成しています。コードは AI(Cla
 
 ## 更新履歴
 
+- v1.11.0 (2026-09-27) 新しいバージョンのお知らせを追加(GitHub の Releases を 6 時間ごとに確認。設定でオフにできます)
 - v1.10.0 (2026-09-27) 部屋一覧に検索と並べ替えを追加。お気に入りの部屋を上に表示
 - v1.9.0 (2026-09-27) 「静かな時間帯は通知しない」設定を追加(23:00〜07:00 のような日またぎにも対応)
 - v1.8.0 (2026-09-27) 部屋の通知に「参加」「コードをコピー」「一覧を開く」ボタンを追加

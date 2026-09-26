@@ -171,6 +171,9 @@ function renderSettings() {
       ? `最後の通知: ${new Date(n.time).toLocaleTimeString('ja-JP')} に表示しました`
       : `最後の通知: ${new Date(n.time).toLocaleTimeString('ja-JP')} に失敗しました(${n.message})`;
   $('version').textContent = `v${state.version}(${state.updated} 更新)`;
+  $('update-toggle').checked = state.config.updateCheck;
+  $('update-banner').hidden = !state.update;
+  if (state.update) $('update-text').textContent = `新しいバージョン v${state.update.version} があります`;
 }
 
 // ---- お気に入り・ミュート ----
@@ -304,6 +307,8 @@ $('launch-btn').addEventListener('click', async () => {
   toast(r.message, r.ok ? 'info' : 'error');
 });
 $('site-btn').addEventListener('click', () => window.snr.openSite());
+$('update-toggle').addEventListener('change', (e) => window.snr.setUpdateCheck(e.target.checked));
+$('update-btn').addEventListener('click', () => window.snr.openUpdate());
 $('faq-notify-settings').addEventListener('click', () => window.snr.openNotifySettings());
 
 window.snr.onState(render);

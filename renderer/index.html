@@ -17,6 +17,11 @@
     <button class="ghost" id="pause-btn" type="button">一時停止</button>
   </header>
 
+  <div class="update-banner" id="update-banner" hidden>
+    <span id="update-text"></span>
+    <button class="join small" id="update-btn" type="button">ダウンロードページを開く</button>
+  </div>
+
   <nav class="tabs" role="tablist">
     <button role="tab" id="tab-rooms" aria-selected="true" aria-controls="view-rooms" type="button">部屋</button>
     <button role="tab" id="tab-settings" aria-selected="false" aria-controls="view-settings" type="button">設定</button>
@@ -70,6 +75,7 @@
         </div>
         <label class="check"><input type="checkbox" id="show-all-setting"> 参加できない部屋も一覧に表示する(開始中・満員など)</label>
         <label class="check"><input type="checkbox" id="login-toggle"> Windows起動時に自動で起動する</label>
+        <label class="check"><input type="checkbox" id="update-toggle"> 新しいバージョンが出たら知らせる(GitHubを確認)</label>
         <p class="note" id="login-note" hidden>インストール版でのみ設定できます。</p>
       </fieldset>
       <fieldset>
@@ -198,6 +204,11 @@
       <details class="qa">
         <summary>画面を閉じたのに動いている / 終了したい</summary>
         <p>画面を閉じてもタスクトレイで監視を続けます。完全に終了するときは、タスクトレイのアイコンを右クリックして「終了」を選んでください。</p>
+      </details>
+      <details class="qa">
+        <summary>アップデートのしかた</summary>
+        <p>新しいバージョンが出ると、画面の上部とタスクトレイのメニューに表示され、通知でもお知らせします(同じバージョンは1回だけ)。ダウンロードページからインストーラーを実行すると、設定を引き継いだまま更新されます。更新前に、タスクトレイのアイコンを右クリックして「終了」してください。</p>
+        <p>確認には GitHub の Releases を使い、6時間ごとに確認します。「設定」タブでオフにできます。</p>
       </details>
       <details class="qa">
         <summary>不具合を見つけた</summary>

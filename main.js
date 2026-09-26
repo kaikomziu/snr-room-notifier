@@ -21,6 +21,7 @@
 //   v1.8.0 (2026-09-27) 部屋の通知に「参加」「コードをコピー」「一覧を開く」ボタンを追加
 //   v1.9.0 (2026-09-27) 静かな時間帯(指定した時間は通知しない、日またぎ対応)を追加
 //   v1.10.0 (2026-09-27) 部屋一覧に検索(部屋名・コード・マップ)と並べ替え(人数・新しい順・部屋名・マップ)を追加。お気に入りを上に表示
+//   v1.11.0 (2026-09-27) 新しいバージョンのお知らせを追加(GitHubのReleasesを6時間ごとに確認、画面上部・トレイ・通知で案内、設定でオフ可)
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
@@ -29,12 +30,14 @@ const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require
 const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
 const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify, defaultQuiet, sanitizeQuiet, isQuietNow } = require('./lib/filter');
+const { fetchNewerRelease, RELEASES_PAGE } = require('./lib/update');
 
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
 const MAX_INDIVIDUAL = 3;       // 一度にこれ以上増えたらまとめて1件で通知
+const UPDATE_CHECK_MS = 6 * 60 * 60 * 1000; // 新しいバージョンの確認は6時間ごと(GitHub)
 const VACANCY_COOLDOWN_MS = 120000; // 同じ部屋の「空きが出た」通知は2分に1回まで
 const SITE_URL = 'https://cs-web.supernewroles.com/';
 const HIDDEN_ARG = '--hidden';  // Windows自動起動時はウィンドウを出さずトレイだけで起動
@@ -48,7 +51,7 @@ const assetPath = (name) => path.join(__dirname, 'assets', name).replace(`app.as
 
 // ---- 設定 ----
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
-const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false, quiet: defaultQuiet };
+const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false, quiet: defaultQuiet, updateCheck: true, notifiedUpdate: '' };
 let config = structuredClone(defaultConfig);
 
 function loadConfig() {
@@ -90,6 +93,7 @@ let lastChecked = null;
 let joining = false;
 let isQuitting = false;
 let joinPhase = '';              // 参加処理の進み具合(画面表示用)
+let update = null;               // 新しいバージョン { version, url }
 let lastNotify = null;           // 最後に出そうとした通知の結果(不具合調査用)
 const activeNotifications = new Set(); // GCで通知のクリックハンドラが消えないよう参照を保持
 
@@ -290,6 +294,37 @@ function resetRegion(key) {
   st.error = null;
 }
 
+// ---- アップデートの確認 ----
+async function checkForUpdate() {
+  if (!config.updateCheck) return;
+  try {
+    update = await fetchNewerRelease(APP_VERSION);
+  } catch (_) {
+    return; // オフラインなどで失敗しても次回に確認する
+  }
+  // 同じバージョンの通知は1回だけ
+  if (update && config.notifiedUpdate !== update.version) {
+    config.notifiedUpdate = update.version;
+    saveConfig();
+    notify(`新しいバージョン v${update.version} があります`, 'クリックでダウンロードページを開きます', openUpdatePage);
+  }
+  updateTray();
+  sendState();
+}
+
+function openUpdatePage() {
+  shell.openExternal(update ? update.url : RELEASES_PAGE);
+}
+
+function setUpdateCheck(value) {
+  config.updateCheck = !!value;
+  if (!config.updateCheck) update = null;
+  saveConfig();
+  if (config.updateCheck) checkForUpdate();
+  updateTray();
+  sendState();
+}
+
 // ---- 設定変更(トレイと画面の共通処理) ----
 function setPaused(value) {
   config.paused = !!value;
@@ -396,6 +431,7 @@ function snapshot() {
     joining,
     joinPhase,
     lastNotify,
+    update,
     gamePathProblem: config.gamePath ? checkExePath(config.gamePath) : null,
     config,
     filterActive: filterIsActive(config.filter),
@@ -467,6 +503,7 @@ function updateTray() {
     { type: 'separator' },
     { label: '一時停止', type: 'checkbox', checked: config.paused, click: (i) => setPaused(i.checked) },
     { type: 'separator' },
+    ...(update ? [{ label: `新しいバージョン v${update.version} をダウンロード`, click: openUpdatePage }] : []),
     { label: `v${APP_VERSION} (${APP_UPDATED})`, enabled: false },
     { label: '終了', click: () => { isQuitting = true; app.quit(); } },
   ]));
@@ -484,6 +521,8 @@ ipcMain.handle('set-filter', (_e, v) => setFilter(v));
 ipcMain.handle('set-hosts', (_e, v) => setHosts(v));
 ipcMain.handle('set-notify-vacancy', (_e, v) => setNotifyVacancy(v));
 ipcMain.handle('set-quiet', (_e, v) => setQuiet(v));
+ipcMain.handle('set-update-check', (_e, v) => setUpdateCheck(v));
+ipcMain.handle('open-update', () => openUpdatePage());
 ipcMain.handle('choose-game-path', () => chooseGamePath());
 ipcMain.handle('launch-game', () => startGame());
 ipcMain.handle('set-auto-launch', (_e, v) => { config.autoLaunch = !!v; saveConfig(); sendState(); });
@@ -510,6 +549,8 @@ if (!app.requestSingleInstanceLock()) {
     createWindow();
     if (!process.argv.includes(HIDDEN_ARG)) win.once('ready-to-show', showWindow);
     restartPolling();
+    setTimeout(checkForUpdate, 5000);
+    setInterval(checkForUpdate, UPDATE_CHECK_MS);
   });
 
   app.on('before-quit', () => { isQuitting = true; });

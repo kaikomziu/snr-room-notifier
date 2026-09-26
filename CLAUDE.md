@@ -3,7 +3,7 @@
 Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部屋が開かれたら Windows 通知を出し、通知や一覧からそのまま参加できる Windows 常駐アプリ(Electron)。
 
 - GitHub: https://github.com/kaikomziu/snr-room-notifier(public、main ブランチ、GPL-3.0-only)
-- 現在: v1.10.0(2026-09-27)
+- 現在: v1.11.0(2026-09-27)
 - 技術: Electron 44 / electron-builder 26(NSIS、oneClick、per-user)。ランタイム依存パッケージなし
 - 起動: `npm start` / ビルド: `npm run dist`(dist/ に出力)
 
@@ -13,6 +13,9 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - `lib/rooms.js` — ルーム一覧API取得、ルームキー作成、ルームコード変換、表示用データ作成
 - `lib/join.js` — MOD のローカル参加APIへの参加リクエスト(AES-128-CBC 暗号化)
 - `lib/game.js` — Among Us.exe 起動、MOD ローカルAPIの起動確認(TCP接続のみ)
+- `lib/filter.js` — 通知の条件、お気に入り/ミュートのホスト、静かな時間帯(sanitize と判定)
+- `lib/update.js` — GitHub Releases で新しいバージョンを確認
+- 通知の仕組み: 部屋ごとに `notified` を持ち、「募集中かつ条件に合った」最初の時点で1回通知。起動直後・再開直後・条件変更直後に既に合っている部屋は通知済み扱い(連打防止)
 - `renderer/index.html` / `style.css` / `app.js` — 画面(部屋タブ・設定タブ)。CSP は `'self'` のみ
 - `assets/` — 独自デザインのアイコン(ベル+赤ドット)。Windows 通知が asar 内画像を読めないため package.json の `asarUnpack` で asar 外に置いている
 - `publish.bat` — 初回公開用(.gitignore 済み、今後は使わない)。`release/` も .gitignore 済み
@@ -33,7 +36,8 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 
 ## 守ること(厳守)
 - 取得間隔 `POLL_MS` は **10秒より短くしない**(SNR開発者に「公式サイトより長い間隔」と伝えてある)
-- 使うエンドポイントは **3つだけ**(all_for_web ×2、localhost の joinGame)。増やす場合は SNR 開発者への報告が必要なので **先にユーザーに確認**
+- SNR 関連で使うエンドポイントは **3つだけ**(all_for_web ×2、localhost の joinGame)。増やす場合は SNR 開発者への報告が必要なので **先にユーザーに確認**
+  - SNR 以外では v1.11.0 からアップデート確認で `https://api.github.com/repos/kaikomziu/snr-room-notifier/releases/latest` を6時間ごとに使う(ユーザー承認済み、`lib/update.js`)
 - 「非公式ツール」の明記(README 冒頭、設定タブの免責事項)を消さない
 - 「AI(Claude Code)で作成している」明記(README 冒頭と「開発」、設定タブの免責事項)も消さない
 - Among Us のキャラクター(クルー)など Innersloth / SNR の素材は使わない
@@ -54,6 +58,7 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - Windows では初回に `npm install` が必要(node_modules は Linux ビルド時のもので無かった)
 
 ## 未確認・既知の懸念
+- v1.4.3〜v1.10.0 は push のみで Release は作っていない(v1.11.0 でまとめて Release)
 - Linux 上でビルドしたため Windows 実機での動作確認が不十分。特に:
   - 通知: v1.4.0 でアイコンを asar 外に置いたことで直ったか(設定タブに最後の通知の成否を表示している)
   - 起動→そのまま参加の流れ: 起動待ち最大180秒 → 8秒待機 → 最大60秒再試行、の待ち時間が実機で合っているか

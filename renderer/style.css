@@ -69,6 +69,11 @@ button { cursor: pointer; }
 .ghost:hover { background: var(--panel); }
 .ghost.small { padding: 3px 10px; font-size: 13px; }
 
+/* 新しいバージョンのお知らせ */
+.update-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 12px 8px; padding: 8px 12px; border-radius: 10px; background: color-mix(in srgb, var(--go) 14%, var(--panel)); border: 1px solid var(--go); font-size: 13px; font-weight: 700; }
+.update-banner[hidden] { display: none; }
+.join.small { padding: 4px 12px; font-size: 13px; }
+
 /* タブ */
 .tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); }
 .tabs button {
