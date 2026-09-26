@@ -1,6 +1,6 @@
 {
   "name": "snr-room-notifier",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "SuperNewRoles の公開ルームが開かれたら Windows 通知を出す常駐アプリ(非公式)",
   "main": "main.js",
   "scripts": {
