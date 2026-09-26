@@ -20,6 +20,7 @@
 //   v1.7.0 (2026-09-27) 満員の部屋に空きが出たら通知する設定を追加(同じ部屋は2分に1回まで)
 //   v1.8.0 (2026-09-27) 部屋の通知に「参加」「コードをコピー」「一覧を開く」ボタンを追加
 //   v1.9.0 (2026-09-27) 静かな時間帯(指定した時間は通知しない、日またぎ対応)を追加
+//   v1.10.0 (2026-09-27) 部屋一覧に検索(部屋名・コード・マップ)と並べ替え(人数・新しい順・部屋名・マップ)を追加。お気に入りを上に表示
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
@@ -29,7 +30,7 @@ const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
 const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify, defaultQuiet, sanitizeQuiet, isQuietNow } = require('./lib/filter');
 
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.10.0';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)

@@ -29,6 +29,15 @@
         <label class="check"><input type="checkbox" id="show-all"> 参加できない部屋も表示</label>
         <button class="ghost small" id="refresh-btn" type="button">今すぐ更新</button>
       </div>
+      <div class="list-tools">
+        <input type="search" id="room-search" class="text" placeholder="部屋名・コード・マップで検索" aria-label="部屋を検索">
+        <select id="room-sort" class="text sort" aria-label="並べ替え">
+          <option value="players">人数が多い順</option>
+          <option value="new">新しい順</option>
+          <option value="name">部屋名順</option>
+          <option value="map">マップ順</option>
+        </select>
+      </div>
       <ul class="rooms" id="rooms"></ul>
       <p class="empty" id="empty" hidden></p>
     </section>

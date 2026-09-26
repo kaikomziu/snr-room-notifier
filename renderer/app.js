@@ -38,6 +38,19 @@ function el(tag, className, text) {
   return e;
 }
 
+const SORTERS = {
+  players: (a, b) => b.playerCount - a.playerCount,
+  new: (a, b) => (firstSeen.get(b.key) || 0) - (firstSeen.get(a.key) || 0),
+  name: (a, b) => a.roomName.localeCompare(b.roomName, 'ja'),
+  map: (a, b) => a.map.localeCompare(b.map) || b.playerCount - a.playerCount,
+};
+
+// 並べ替えの選択はこのPCだけの好みなので localStorage に置く(使えなくても動く)
+try {
+  const saved = localStorage.getItem('roomSort');
+  if (saved && SORTERS[saved]) $('room-sort').value = saved;
+} catch (_) { /* 保存できない環境では既定の並び */ }
+
 function renderRooms() {
   const onlyJoinable = !state.config.showAll;
   const now = Date.now();
@@ -45,9 +58,14 @@ function renderRooms() {
   for (const r of state.rooms) if (!firstSeen.has(r.key)) firstSeen.set(r.key, initialized ? now : 0);
   if (state.checkedAt) initialized = true;
 
-  const rooms = state.rooms
-    .filter((r) => !onlyJoinable || r.joinable)
-    .sort((a, b) => (b.joinable - a.joinable) || (b.playerCount - a.playerCount));
+  const query = $('room-search').value.trim().toLowerCase();
+  const favs = state.config.hosts.favorites;
+  const order = SORTERS[$('room-sort').value] || SORTERS.players;
+  const allShown = state.rooms.filter((r) => !onlyJoinable || r.joinable);
+  // 参加できる部屋 → お気に入り → 選んだ並び順
+  const rooms = allShown
+    .filter((r) => !query || [r.roomName, r.code, r.map].some((t) => String(t).toLowerCase().includes(query)))
+    .sort((a, b) => (b.joinable - a.joinable) || (favs.includes(b.roomName) - favs.includes(a.roomName)) || order(a, b));
 
   const list = $('rooms');
   list.replaceChildren();
@@ -109,6 +127,7 @@ function renderRooms() {
   empty.hidden = rooms.length > 0;
   if (state.config.paused) empty.textContent = '一時停止中です。再開すると部屋の監視を始めます。';
   else if (state.status.kind === 'error') empty.textContent = state.status.text;
+  else if (query && allShown.length) empty.textContent = `「${$('room-search').value.trim()}」に合う部屋はありません。`;
   else if (onlyJoinable) empty.textContent = '今は参加できる部屋がありません。\n新しく開かれたら通知します。';
   else empty.textContent = '今は公開されている部屋がありません。';
   empty.style.whiteSpace = 'pre-line';
@@ -251,6 +270,11 @@ async function doJoin(room) {
 
 $('pause-btn').addEventListener('click', () => window.snr.setPaused(!state.config.paused));
 $('refresh-btn').addEventListener('click', () => window.snr.refresh());
+$('room-search').addEventListener('input', () => { if (state) renderRooms(); });
+$('room-sort').addEventListener('change', (e) => {
+  try { localStorage.setItem('roomSort', e.target.value); } catch (_) { /* 無視 */ }
+  if (state) renderRooms();
+});
 // 部屋タブと設定タブのどちらで切り替えても同じ設定を保存する
 $('show-all').addEventListener('change', (e) => window.snr.setShowAll(e.target.checked));
 $('show-all-setting').addEventListener('change', (e) => window.snr.setShowAll(e.target.checked));
