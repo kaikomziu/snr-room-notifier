@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SNR Room Notifier</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="status" id="status" role="status" aria-live="polite">
+      <span class="lamp" id="lamp"></span>
+      <span id="status-text">起動しています</span>
+    </div>
+    <button class="ghost" id="launch-btn" type="button">Among Usを起動</button>
+    <button class="ghost" id="pause-btn" type="button">一時停止</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-rooms" aria-selected="true" aria-controls="view-rooms" type="button">部屋</button>
+    <button role="tab" id="tab-settings" aria-selected="false" aria-controls="view-settings" type="button">設定</button>
+  </nav>
+
+  <main>
+    <section id="view-rooms" role="tabpanel" aria-labelledby="tab-rooms">
+      <div class="list-head">
+        <label class="check"><input type="checkbox" id="show-all"> 参加できない部屋も表示</label>
+        <button class="ghost small" id="refresh-btn" type="button">今すぐ更新</button>
+      </div>
+      <ul class="rooms" id="rooms"></ul>
+      <p class="empty" id="empty" hidden></p>
+    </section>
+
+    <section id="view-settings" role="tabpanel" aria-labelledby="tab-settings" hidden>
+      <fieldset>
+        <legend>監視するサーバー</legend>
+        <div id="region-list"></div>
+      </fieldset>
+      <fieldset>
+        <legend>Among Us</legend>
+        <p class="path" id="game-path">未設定</p>
+        <p class="note warn" id="game-path-problem" hidden></p>
+        <div class="actions tight">
+          <button class="ghost" id="choose-path-btn" type="button">Among Us.exe を選ぶ</button>
+        </div>
+        <p class="note">SuperNewRolesを入れたフォルダにある「Among Us.exe」を選んでください。</p>
+        <label class="check"><input type="checkbox" id="auto-launch-toggle"> 参加するとき、起動していなければ自動で起動する</label>
+      </fieldset>
+      <fieldset>
+        <legend>動作</legend>
+        <label class="check"><input type="checkbox" id="notify-toggle"> 新しい部屋が開かれたら通知する</label>
+        <label class="check"><input type="checkbox" id="show-all-setting"> 参加できない部屋も一覧に表示する(開始中・満員など)</label>
+        <label class="check"><input type="checkbox" id="login-toggle"> Windows起動時に自動で起動する</label>
+        <p class="note" id="login-note" hidden>インストール版でのみ設定できます。</p>
+      </fieldset>
+      <p class="note" id="notify-status">まだ通知は出ていません。</p>
+      <div class="actions">
+        <button class="ghost" id="test-btn" type="button">テスト通知を出す</button>
+        <button class="ghost" id="site-btn" type="button">公式のルーム一覧を開く</button>
+      </div>
+      <p class="about">
+        画面を閉じてもタスクトレイで監視を続けます。完全に終了するときはトレイアイコンの右クリックから「終了」を選んでください。
+      </p>
+      <div class="disclaimer">
+        <p>このアプリは個人が作成した非公式ツールです。SuperNewRoles 開発チーム、Innersloth LLC(Among Us)とは関係がなく、承認や支援も受けていません。</p>
+        <p>アプリの不具合や使い方について、SuperNewRoles 公式に問い合わせないでください。不具合の報告は <a href="https://github.com/kaikomziu/snr-room-notifier/issues" target="_blank" rel="noopener">GitHub の Issues</a> へお願いします。</p>
+        <p>部屋の情報は SuperNewRoles の公開ルーム一覧と同じ仕組みで取得しています。公式側の仕様変更により、予告なく使えなくなることがあります。</p>
+        <p>本アプリは無保証で提供されます。利用により生じた問題について、作成者は責任を負いません。</p>
+      </div>
+      <p class="version" id="version"></p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="alert" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

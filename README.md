@@ -1,0 +1,65 @@
+# SNR Room Notifier
+
+Among Us の MOD「SuperNewRoles」のカスタムサーバーで公開部屋が開かれたら、Windows の通知で知らせる常駐アプリです。通知や一覧からそのまま部屋に参加できます。
+
+> **非公式ツールです。**
+> このアプリは個人が作成したもので、SuperNewRoles 開発チームおよび Innersloth LLC(Among Us)とは関係がなく、承認や支援も受けていません。
+> 不具合や使い方について、SuperNewRoles 公式へ問い合わせないでください。報告は [Issues](https://github.com/kaikomziu/snr-room-notifier/issues) へお願いします。
+
+## できること
+
+- SuperNewRoles Tokyo / US East で新しい募集中の部屋が開かれたら Windows に通知
+- 通知をクリック、または一覧の「参加」で、そのまま部屋に参加
+- Among Us が起動していなければ、起動 → 読み込み待ち → 参加まで自動で実行
+- 部屋一覧の表示(参加できない部屋を含めるかは設定で切り替え)
+- 画面を閉じてもタスクトレイで監視を継続、Windows 起動時の自動起動
+
+## インストール
+
+1. [Releases](https://github.com/kaikomziu/snr-room-notifier/releases) から `SNR-Room-Notifier-Setup-x.x.x.exe` をダウンロードして実行します。
+2. 「Windows によって PC が保護されました」と表示されたら、「詳細情報」→「実行」を押します(コード署名をしていないため表示されます)。
+3. 設定タブで、SuperNewRoles を入れたフォルダの「Among Us.exe」を選びます。
+
+対応環境: Windows 10 / 11(64bit)、SuperNewRoles を導入した PC 版 Among Us
+
+## 通知が来ないとき
+
+- 「設定」→「システム」→「通知」→「応答不可を自動的にオンにする」で、「ゲームをプレイしているとき」「全画面モードでアプリを使用しているとき」のチェックを外してください。
+- アプリの設定タブの「テスト通知を出す」で通知が出るか確認できます。結果は同じ画面に表示されます。
+- 部屋が「非公開」だと一覧に出ないため通知されません。
+
+## 仕組み
+
+- 部屋の情報: SuperNewRoles 公式ルーム一覧(https://cs-web.supernewroles.com/)と同じ API(`https://cs.supernewroles.com/api/games/all_for_web`、US East は `cs-useast`)を 10 秒間隔で取得し、前回なかった募集中の部屋を通知します。起動直後の 1 回目は記録のみで通知しません。
+- 部屋への参加: SuperNewRoles MOD が PC 内で待ち受けているローカル API(`http://localhost:49152/joinGame`)に、公式の参加ボタンと同じ形式で参加リクエストを送ります。
+
+## 注意事項
+
+- 公式側の仕様変更により、予告なく使えなくなる可能性があります。
+- サーバー負荷に配慮して取得間隔を 10 秒にしています。改変する場合も短くしないでください。
+- 本アプリは無保証で提供されます。利用により生じた問題について、作成者は責任を負いません。
+- Among Us は Innersloth LLC の商標・著作物です。SuperNewRoles は SuperNewRoles 開発チームの MOD です。
+
+## 開発
+
+```
+npm install
+npm start        # 開発実行
+npm run dist     # インストーラー作成(dist/ に出力)
+```
+
+Electron 44 / electron-builder 26 で作成しています。
+
+## ライセンス
+
+[GPL-3.0](LICENSE)
+
+## 更新履歴
+
+- v1.4.1 (2026-09-26) アイコンを独自デザインに変更、GPL-3.0 で公開
+- v1.4.0 (2026-09-26) Among Us.exe を設定して起動できるように。未起動時は起動してから参加。通知の成否を画面に表示
+- v1.3.1 (2026-09-26) 非公式ツールである旨・免責事項を明記
+- v1.3.0 (2026-09-26) 「参加できない部屋も表示する」設定を追加
+- v1.2.0 (2026-09-26) 画面を追加(部屋一覧・参加ボタン・設定)。閉じてもトレイに常駐
+- v1.1.0 (2026-09-26) 通知クリックでそのまま部屋に参加
+- v1.0.0 (2026-09-26) 初版

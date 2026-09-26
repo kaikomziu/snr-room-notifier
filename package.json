@@ -1,0 +1,46 @@
+{
+  "name": "snr-room-notifier",
+  "version": "1.4.1",
+  "description": "SuperNewRoles の公開ルームが開かれたら Windows 通知を出す常駐アプリ(非公式)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win nsis"
+  },
+  "author": "kaikomziu",
+  "license": "GPL-3.0-only",
+  "devDependencies": {
+    "electron": "^44.4.5",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.kaikomziu.snr-room-notifier",
+    "productName": "SNR Room Notifier",
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**",
+      "renderer/**",
+      "assets/**",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "assets/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kaikomziu/snr-room-notifier.git"
+  },
+  "homepage": "https://github.com/kaikomziu/snr-room-notifier"
+}
