@@ -49,7 +49,9 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 1. 上の4か所のバージョンと日付を更新
 2. `npm run dist` でインストーラー作成(dist/)
 3. `git add -A` → commit → `git push origin main`
-4. `gh release create vX.Y.Z "dist\SNR Room Notifier Setup X.Y.Z.exe" --title "vX.Y.Z" --notes "変更内容"`
+4. README のインストール手順に合わせ、`dist/SNR-Room-Notifier-Setup-X.Y.Z.exe`(ハイフン区切り)にコピーしてから添付する:
+   `gh release create vX.Y.Z dist/SNR-Room-Notifier-Setup-X.Y.Z.exe --title "vX.Y.Z" --notes "変更内容"`
+- Windows では初回に `npm install` が必要(node_modules は Linux ビルド時のもので無かった)
 
 ## 未確認・既知の懸念
 - Linux 上でビルドしたため Windows 実機での動作確認が不十分。特に:
