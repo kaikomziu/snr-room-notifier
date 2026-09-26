@@ -17,6 +17,7 @@
 //   v1.4.4 (2026-09-26) 起動確認をTCP接続だけで行うように変更(MOD側のログにエラーが残らない)
 //   v1.5.0 (2026-09-26) 通知の条件を追加(マップ・インポスター数・人数・部屋名キーワード)。条件に初めて合った時点で通知
 //   v1.6.0 (2026-09-27) お気に入り/ミュートのホストを追加(お気に入りは条件に関係なく通知、ミュートは通知しない、お気に入りだけ通知する設定)
+//   v1.7.0 (2026-09-27) 満員の部屋に空きが出たら通知する設定を追加(同じ部屋は2分に1回まで)
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -26,11 +27,12 @@ const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
 const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify } = require('./lib/filter');
 
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
 const MAX_INDIVIDUAL = 3;       // 一度にこれ以上増えたらまとめて1件で通知
+const VACANCY_COOLDOWN_MS = 120000; // 同じ部屋の「空きが出た」通知は2分に1回まで
 const SITE_URL = 'https://cs-web.supernewroles.com/';
 const HIDDEN_ARG = '--hidden';  // Windows自動起動時はウィンドウを出さずトレイだけで起動
 const GAME_BOOT_TIMEOUT_MS = 180000; // Among Usの起動を待つ最大時間(初回はコスメのDLで遅いことがある)
@@ -43,7 +45,7 @@ const assetPath = (name) => path.join(__dirname, 'assets', name).replace(`app.as
 
 // ---- 設定 ----
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
-const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts };
+const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false };
 let config = structuredClone(defaultConfig);
 
 function loadConfig() {
@@ -72,7 +74,8 @@ function saveConfig() {
 // rooms: 画面表示用の最新ルーム一覧
 const regionState = {};
 for (const key of Object.keys(REGIONS)) {
-  regionState[key] = { seen: new Set(), notified: new Set(), initialized: false, error: null, rooms: [] };
+  // full: 前回の取得で「募集中かつ満員」だった部屋、vacancyAt: 空きが出た通知をした時刻
+  regionState[key] = { seen: new Set(), notified: new Set(), full: new Set(), vacancyAt: new Map(), initialized: false, error: null, rooms: [] };
 }
 const roomIndex = new Map(); // key -> { regionKey, game } 参加時に元データを引くため
 
@@ -103,17 +106,20 @@ function notify(title, body, onClick = showWindow) {
   n.show();
 }
 
-function notifyNewRooms(rooms) {
+// kind: 'new' = 新しく条件に合った部屋、'vacancy' = 満員だった部屋に空きが出た
+function notifyNewRooms(rooms, kind = 'new') {
   if (!config.notify || rooms.length === 0) return;
   if (rooms.length > MAX_INDIVIDUAL) {
     const names = rooms.slice(0, 5).map((r) => r.roomName).join('、');
-    notify(`新しい部屋が${rooms.length}件開かれました`, `${names}${rooms.length > 5 ? ' ほか' : ''}\nクリックで一覧を開く`);
+    const head = kind === 'vacancy' ? `${rooms.length}件の部屋に空きが出ました` : `新しい部屋が${rooms.length}件開かれました`;
+    notify(head, `${names}${rooms.length > 5 ? ' ほか' : ''}\nクリックで一覧を開く`);
     return;
   }
   for (const r of rooms) {
     const fav = config.hosts.favorites.includes(r.roomName);
+    const head = kind === 'vacancy' ? '空きが出ました: ' : fav ? '★お気に入りの部屋: ' : '部屋が開かれました: ';
     notify(
-      `${fav ? '★お気に入りの部屋: ' : '部屋が開かれました: '}${r.roomName}`,
+      `${head}${r.roomName}`,
       `コード ${r.code} / ${r.map} / ${r.players}人 / インポスター${r.impostors} / ${r.region}\nクリックで参加`,
       () => requestJoin(r.key)
     );
@@ -201,6 +207,9 @@ async function checkRegion(regionKey) {
     const current = new Set();
     const rooms = [];
     const fresh = [];
+    const vacancy = [];
+    const full = new Set();
+    const now = Date.now();
     for (const g of games) {
       const key = roomKey(regionKey, g);
       const room = { key, ...describeRoom(regionKey, g) };
@@ -211,18 +220,27 @@ async function checkRegion(regionKey) {
         st.notified.add(key);
         if (st.initialized) fresh.push(room);
       }
+      const recruiting = room.gameState === STATE_RECRUITING;
+      if (recruiting && room.maxPlayers > 0 && room.playerCount >= room.maxPlayers) full.add(key);
+      else if (config.notifyVacancy && st.initialized && st.full.has(key) && room.joinable && shouldNotify(room, config) &&
+        now - (st.vacancyAt.get(key) || 0) > VACANCY_COOLDOWN_MS) {
+        st.vacancyAt.set(key, now);
+        vacancy.push(room);
+      }
     }
     // 消えたルームは忘れる(同じコードで再度開かれたら再通知される)
     for (const key of st.seen) if (!current.has(key)) roomIndex.delete(key);
     for (const key of st.notified) if (!current.has(key)) st.notified.delete(key);
+    for (const key of st.vacancyAt.keys()) if (!current.has(key)) st.vacancyAt.delete(key);
+    st.full = full;
     st.seen = current;
     st.rooms = rooms;
     st.initialized = true;
     st.error = null;
-    return fresh;
+    return { fresh, vacancy };
   } catch (e) {
     st.error = e.message || String(e);
-    return [];
+    return { fresh: [], vacancy: [] };
   }
 }
 
@@ -231,7 +249,8 @@ async function poll() {
   const targets = Object.keys(REGIONS).filter((k) => config.regions[k]);
   const results = await Promise.all(targets.map(checkRegion));
   lastChecked = new Date();
-  notifyNewRooms(results.flat());
+  notifyNewRooms(results.flatMap((r) => r.fresh));
+  notifyNewRooms(results.flatMap((r) => r.vacancy), 'vacancy');
   updateTray();
   sendState();
 }
@@ -247,6 +266,8 @@ function resetRegion(key) {
   for (const k of st.seen) roomIndex.delete(k);
   st.seen = new Set();
   st.notified = new Set();
+  st.full = new Set();
+  st.vacancyAt = new Map();
   st.rooms = [];
   st.initialized = false;
   st.error = null;
@@ -300,6 +321,12 @@ function setFilter(value) {
 function setHosts(value) {
   config.hosts = sanitizeHosts(value);
   markCurrentAsNotified();
+  saveConfig();
+  sendState();
+}
+
+function setNotifyVacancy(value) {
+  config.notifyVacancy = !!value;
   saveConfig();
   sendState();
 }
@@ -430,6 +457,7 @@ ipcMain.handle('set-login', (_e, v) => setLogin(v));
 ipcMain.handle('set-show-all', (_e, v) => setShowAll(v));
 ipcMain.handle('set-filter', (_e, v) => setFilter(v));
 ipcMain.handle('set-hosts', (_e, v) => setHosts(v));
+ipcMain.handle('set-notify-vacancy', (_e, v) => setNotifyVacancy(v));
 ipcMain.handle('choose-game-path', () => chooseGamePath());
 ipcMain.handle('launch-game', () => startGame());
 ipcMain.handle('set-auto-launch', (_e, v) => { config.autoLaunch = !!v; saveConfig(); sendState(); });

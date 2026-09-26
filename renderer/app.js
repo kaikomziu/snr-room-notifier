@@ -127,6 +127,8 @@ function renderSettings() {
     list.append(label);
   }
   $('notify-toggle').checked = state.config.notify;
+  $('vacancy-toggle').checked = state.config.notifyVacancy;
+  $('vacancy-toggle').disabled = !state.config.notify;
   $('show-all').checked = state.config.showAll;
   $('show-all-setting').checked = state.config.showAll;
   $('login-toggle').checked = state.login.enabled;
@@ -248,6 +250,7 @@ $('refresh-btn').addEventListener('click', () => window.snr.refresh());
 $('show-all').addEventListener('change', (e) => window.snr.setShowAll(e.target.checked));
 $('show-all-setting').addEventListener('change', (e) => window.snr.setShowAll(e.target.checked));
 $('notify-toggle').addEventListener('change', (e) => window.snr.setNotify(e.target.checked));
+$('vacancy-toggle').addEventListener('change', (e) => window.snr.setNotifyVacancy(e.target.checked));
 $('login-toggle').addEventListener('change', (e) => window.snr.setLogin(e.target.checked));
 $('test-btn').addEventListener('click', () => window.snr.testNotify());
 $('choose-path-btn').addEventListener('click', () => window.snr.chooseGamePath());

@@ -51,6 +51,7 @@
       <fieldset>
         <legend>動作</legend>
         <label class="check"><input type="checkbox" id="notify-toggle"> 新しい部屋が開かれたら通知する</label>
+        <label class="check"><input type="checkbox" id="vacancy-toggle"> 満員の部屋に空きが出たら通知する</label>
         <label class="check"><input type="checkbox" id="show-all-setting"> 参加できない部屋も一覧に表示する(開始中・満員など)</label>
         <label class="check"><input type="checkbox" id="login-toggle"> Windows起動時に自動で起動する</label>
         <p class="note" id="login-note" hidden>インストール版でのみ設定できます。</p>
@@ -139,6 +140,10 @@
       <details class="qa">
         <summary>部屋が開いてから通知が来るまで少し遅れる</summary>
         <p>サーバーの負荷を考えて、部屋の一覧は10秒ごとに確認しています。そのため、通知が最大10秒ほど遅れることがあります。</p>
+      </details>
+      <details class="qa">
+        <summary>満員の部屋に入りたい</summary>
+        <p>「設定」タブの「満員の部屋に空きが出たら通知する」をオンにすると、募集中で満員だった部屋に空きが出たときに通知します。同じ部屋の通知は2分に1回までです。お気に入り・ミュート・通知の条件も反映されます。</p>
       </details>
       <details class="qa">
         <summary>通知が1件にまとめられた</summary>
