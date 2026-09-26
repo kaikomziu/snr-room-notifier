@@ -56,7 +56,23 @@ function renderRooms() {
     if (!r.joinable) li.classList.add('closed');
     if (now - (firstSeen.get(r.key) || 0) < 60000) li.classList.add('new'); // 開かれて1分以内
 
-    li.append(el('div', 'name', r.roomName));
+    const hosts = state.config.hosts;
+    const isFav = hosts.favorites.includes(r.roomName);
+    const isMuted = hosts.muted.includes(r.roomName);
+    if (isFav) li.classList.add('fav');
+    const nameRow = el('div', 'name-row');
+    const star = el('button', 'star', isFav ? '★' : '☆');
+    star.type = 'button';
+    star.title = isFav ? 'お気に入りから外す' : 'お気に入りに追加(条件に関係なく通知)';
+    star.setAttribute('aria-pressed', String(isFav));
+    star.addEventListener('click', () => toggleHost('favorites', r.roomName));
+    const mute = el('button', 'mute', isMuted ? 'ミュート中' : 'ミュート');
+    mute.type = 'button';
+    mute.title = isMuted ? 'ミュートを解除' : 'このホストの部屋を通知しない';
+    mute.setAttribute('aria-pressed', String(isMuted));
+    mute.addEventListener('click', () => toggleHost('muted', r.roomName));
+    nameRow.append(star, el('span', 'name', r.roomName), mute);
+    li.append(nameRow);
 
     const meta = el('div', 'meta');
     const st = el('span', 'state', r.stateLabel);
@@ -121,6 +137,7 @@ function renderSettings() {
   $('game-path-problem').hidden = !state.gamePathProblem;
   $('auto-launch-toggle').checked = state.config.autoLaunch;
   renderFilter();
+  renderHosts();
   const n = state.lastNotify;
   $('notify-status').textContent = !n
     ? 'まだ通知は出ていません。'
@@ -128,6 +145,45 @@ function renderSettings() {
       ? `最後の通知: ${new Date(n.time).toLocaleTimeString('ja-JP')} に表示しました`
       : `最後の通知: ${new Date(n.time).toLocaleTimeString('ja-JP')} に失敗しました(${n.message})`;
   $('version').textContent = `v${state.version}(${state.updated} 更新)`;
+}
+
+// ---- お気に入り・ミュート ----
+function toggleHost(kind, name) {
+  const h = structuredClone(state.config.hosts);
+  const other = kind === 'favorites' ? 'muted' : 'favorites';
+  if (h[kind].includes(name)) {
+    h[kind] = h[kind].filter((n) => n !== name);
+  } else {
+    h[kind].push(name);
+    h[other] = h[other].filter((n) => n !== name);
+  }
+  window.snr.setHosts(h);
+}
+
+function renderHosts() {
+  const h = state.config.hosts;
+  $('favorites-only').checked = h.favoritesOnly;
+  for (const [kind, id] of [['favorites', 'favorite-list'], ['muted', 'muted-list']]) {
+    const list = $(id);
+    list.replaceChildren();
+    if (!h[kind].length) list.append(el('li', 'none', 'なし'));
+    for (const name of h[kind]) {
+      const li = el('li', null, name);
+      const x = el('button', 'remove', '×');
+      x.type = 'button';
+      x.title = `${name} を外す`;
+      x.addEventListener('click', () => toggleHost(kind, name));
+      li.append(x);
+      list.append(li);
+    }
+  }
+}
+
+function addHostFromInput(kind) {
+  const name = $('host-name').value.trim();
+  if (!name) return;
+  if (!state.config.hosts[kind].includes(name)) toggleHost(kind, name);
+  $('host-name').value = '';
 }
 
 // ---- 通知の条件 ----
@@ -198,6 +254,10 @@ $('choose-path-btn').addEventListener('click', () => window.snr.chooseGamePath()
 for (const id of ['filter-maps', 'filter-impostors', 'filter-min', 'filter-keywords']) {
   $(id).addEventListener('change', () => window.snr.setFilter(readFilter()));
 }
+$('favorites-only').addEventListener('change', (e) => window.snr.setHosts({ ...state.config.hosts, favoritesOnly: e.target.checked }));
+$('add-favorite').addEventListener('click', () => addHostFromInput('favorites'));
+$('add-muted').addEventListener('click', () => addHostFromInput('muted'));
+$('host-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') addHostFromInput('favorites'); });
 $('filter-clear').addEventListener('click', () => window.snr.setFilter({}));
 $('auto-launch-toggle').addEventListener('change', (e) => window.snr.setAutoLaunch(e.target.checked));
 $('launch-btn').addEventListener('click', async () => {

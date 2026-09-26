@@ -100,7 +100,14 @@ main { flex: 1; overflow-y: auto; padding: 12px; }
 }
 .room.closed { opacity: .6; }
 .room.new { border-color: var(--go); }
-.name { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.name-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.name { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; min-width: 0; }
+.star, .mute { background: none; border: 0; padding: 0 2px; color: var(--muted); flex: none; }
+.star { font-size: 17px; line-height: 1; }
+.star[aria-pressed="true"] { color: var(--warn); }
+.mute { font-size: 11px; opacity: .7; margin-left: auto; }
+.mute[aria-pressed="true"] { color: var(--crew); opacity: 1; }
+.room.fav { border-color: var(--warn); }
 .meta { grid-column: 1; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 2px 12px; }
 .state { font-weight: 700; }
 .state[data-state="0"] { color: var(--go); }
@@ -164,6 +171,15 @@ legend { padding: 0 6px; font-weight: 700; }
 .num, .text { border: 1px solid var(--line); border-radius: 6px; background: var(--hull); padding: 4px 8px; }
 .num { width: 5em; }
 .text { width: 100%; min-width: 0; }
+
+/* お気に入り・ミュート */
+.filter-row.top { align-items: start; }
+.host-add { display: flex; gap: 6px; align-items: center; }
+.host-add button { white-space: nowrap; flex: none; }
+.host-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.host-list li { display: inline-flex; align-items: center; gap: 2px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 4px 1px 10px; font-size: 13px; }
+.host-list li.none { border: 0; padding: 0; color: var(--muted); }
+.host-list .remove { background: none; border: 0; color: var(--muted); padding: 0 4px; }
 
 /* Q&A */
 .faq-head { font-size: 13px; color: var(--muted); margin: 16px 4px 8px; }

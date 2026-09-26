@@ -80,6 +80,18 @@
         </div>
         <div class="actions tight"><button class="ghost small" id="filter-clear" type="button">条件をすべて解除</button></div>
       </fieldset>
+      <fieldset>
+        <legend>お気に入り・ミュート</legend>
+        <p class="note">部屋名(ホスト名)で判定します。お気に入りは通知の条件に関係なく通知し、ミュートは通知しません。部屋一覧の ☆ / ミュート からも登録できます。自分の部屋を通知したくないときは、自分の名前をミュートしてください。</p>
+        <label class="check"><input type="checkbox" id="favorites-only"> お気に入りの部屋だけ通知する</label>
+        <div class="host-add">
+          <input type="text" id="host-name" class="text" placeholder="部屋名(ホスト名)" maxlength="50">
+          <button class="ghost small" id="add-favorite" type="button">☆ お気に入り</button>
+          <button class="ghost small" id="add-muted" type="button">ミュート</button>
+        </div>
+        <div class="filter-row top"><span class="filter-label">お気に入り</span><ul class="host-list" id="favorite-list"></ul></div>
+        <div class="filter-row top"><span class="filter-label">ミュート</span><ul class="host-list" id="muted-list"></ul></div>
+      </fieldset>
       <p class="note" id="notify-status">まだ通知は出ていません。</p>
       <div class="actions">
         <button class="ghost" id="test-btn" type="button">テスト通知を出す</button>
@@ -139,7 +151,7 @@
       </details>
       <details class="qa">
         <summary>非公開の部屋や、自分で立てた部屋は通知される?</summary>
-        <p>非公開の部屋は一覧に出ないため通知されません。自分で立てた部屋でも、公開していれば通知されます。</p>
+        <p>非公開の部屋は一覧に出ないため通知されません。自分で立てた部屋でも、公開していれば通知されます。自分の部屋を通知したくないときは、「設定」タブの「お気に入り・ミュート」で自分の名前をミュートしてください。</p>
       </details>
 
       <h2 class="faq-head">参加</h2>

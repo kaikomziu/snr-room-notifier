@@ -16,6 +16,7 @@
 //   v1.4.3 (2026-09-26) マップ名が「Map Fungle」のように表示される不具合を修正(APIのMapIdが名前で返る場合に対応)
 //   v1.4.4 (2026-09-26) 起動確認をTCP接続だけで行うように変更(MOD側のログにエラーが残らない)
 //   v1.5.0 (2026-09-26) 通知の条件を追加(マップ・インポスター数・人数・部屋名キーワード)。条件に初めて合った時点で通知
+//   v1.6.0 (2026-09-27) お気に入り/ミュートのホストを追加(お気に入りは条件に関係なく通知、ミュートは通知しない、お気に入りだけ通知する設定)
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog } = require('electron');
 const path = require('path');
@@ -23,10 +24,10 @@ const fs = require('fs');
 const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require('./lib/rooms');
 const { joinRoom } = require('./lib/join');
 const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/game');
-const { FILTER_MAPS, defaultFilter, sanitizeFilter, matchesFilter, filterIsActive } = require('./lib/filter');
+const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify } = require('./lib/filter');
 
-const APP_VERSION = '1.5.0';
-const APP_UPDATED = '2026-09-26';
+const APP_VERSION = '1.6.0';
+const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
 const MAX_INDIVIDUAL = 3;       // 一度にこれ以上増えたらまとめて1件で通知
@@ -42,7 +43,7 @@ const assetPath = (name) => path.join(__dirname, 'assets', name).replace(`app.as
 
 // ---- 設定 ----
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
-const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter };
+const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts };
 let config = structuredClone(defaultConfig);
 
 function loadConfig() {
@@ -50,6 +51,7 @@ function loadConfig() {
     const saved = JSON.parse(fs.readFileSync(configPath(), 'utf8'));
     config = { ...defaultConfig, ...saved, regions: { ...defaultConfig.regions, ...saved.regions } };
     config.filter = sanitizeFilter(config.filter);
+    config.hosts = sanitizeHosts(config.hosts);
   } catch (_) {
     // 初回起動時はファイルが無いので既定値のまま
   }
@@ -109,8 +111,9 @@ function notifyNewRooms(rooms) {
     return;
   }
   for (const r of rooms) {
+    const fav = config.hosts.favorites.includes(r.roomName);
     notify(
-      `部屋が開かれました: ${r.roomName}`,
+      `${fav ? '★お気に入りの部屋: ' : '部屋が開かれました: '}${r.roomName}`,
       `コード ${r.code} / ${r.map} / ${r.players}人 / インポスター${r.impostors} / ${r.region}\nクリックで参加`,
       () => requestJoin(r.key)
     );
@@ -204,7 +207,7 @@ async function checkRegion(regionKey) {
       current.add(key);
       rooms.push(room);
       roomIndex.set(key, { regionKey, game: g });
-      if (room.gameState === STATE_RECRUITING && !st.notified.has(key) && matchesFilter(room, config.filter)) {
+      if (room.gameState === STATE_RECRUITING && !st.notified.has(key) && shouldNotify(room, config)) {
         st.notified.add(key);
         if (st.initialized) fresh.push(room);
       }
@@ -279,13 +282,24 @@ function setNotify(value) {
 }
 
 // 条件を変えた直後に、今ある部屋がまとめて通知されないよう、条件に合う部屋は通知済み扱いにする
-function setFilter(value) {
-  config.filter = sanitizeFilter(value);
+function markCurrentAsNotified() {
   for (const st of Object.values(regionState)) {
     for (const room of st.rooms) {
-      if (room.gameState === STATE_RECRUITING && matchesFilter(room, config.filter)) st.notified.add(room.key);
+      if (room.gameState === STATE_RECRUITING && shouldNotify(room, config)) st.notified.add(room.key);
     }
   }
+}
+
+function setFilter(value) {
+  config.filter = sanitizeFilter(value);
+  markCurrentAsNotified();
+  saveConfig();
+  sendState();
+}
+
+function setHosts(value) {
+  config.hosts = sanitizeHosts(value);
+  markCurrentAsNotified();
   saveConfig();
   sendState();
 }
@@ -415,6 +429,7 @@ ipcMain.handle('set-notify', (_e, v) => setNotify(v));
 ipcMain.handle('set-login', (_e, v) => setLogin(v));
 ipcMain.handle('set-show-all', (_e, v) => setShowAll(v));
 ipcMain.handle('set-filter', (_e, v) => setFilter(v));
+ipcMain.handle('set-hosts', (_e, v) => setHosts(v));
 ipcMain.handle('choose-game-path', () => chooseGamePath());
 ipcMain.handle('launch-game', () => startGame());
 ipcMain.handle('set-auto-launch', (_e, v) => { config.autoLaunch = !!v; saveConfig(); sendState(); });
