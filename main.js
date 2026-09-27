@@ -22,9 +22,11 @@
 //   v1.9.0 (2026-09-27) 静かな時間帯(指定した時間は通知しない、日またぎ対応)を追加
 //   v1.10.0 (2026-09-27) 部屋一覧に検索(部屋名・コード・マップ)と並べ替え(人数・新しい順・部屋名・マップ)を追加。お気に入りを上に表示
 //   v1.11.0 (2026-09-27) 新しいバージョンのお知らせを追加(GitHubのReleasesを6時間ごとに確認、画面上部・トレイ・通知で案内、設定でオフ可)
+//   v1.12.0 (2026-09-27) 閉じた・始まった・満員になった部屋の通知を自動で消す(設定でオフ可)、参加できた部屋の通知も消す。「通知をすべて消す」ボタン(設定タブ・トレイ)
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const { REGIONS, STATE_RECRUITING, fetchRooms, roomKey, describeRoom } = require('./lib/rooms');
 const { joinRoom } = require('./lib/join');
@@ -32,12 +34,13 @@ const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/
 const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify, defaultQuiet, sanitizeQuiet, isQuietNow } = require('./lib/filter');
 const { fetchNewerRelease, RELEASES_PAGE } = require('./lib/update');
 
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.12.0';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)
 const MAX_INDIVIDUAL = 3;       // 一度にこれ以上増えたらまとめて1件で通知
 const UPDATE_CHECK_MS = 6 * 60 * 60 * 1000; // 新しいバージョンの確認は6時間ごと(GitHub)
+const MAX_KEPT_NOTIFICATIONS = 100;   // 参照を持ち続ける通知の上限
 const VACANCY_COOLDOWN_MS = 120000; // 同じ部屋の「空きが出た」通知は2分に1回まで
 const SITE_URL = 'https://cs-web.supernewroles.com/';
 const HIDDEN_ARG = '--hidden';  // Windows自動起動時はウィンドウを出さずトレイだけで起動
@@ -51,7 +54,7 @@ const assetPath = (name) => path.join(__dirname, 'assets', name).replace(`app.as
 
 // ---- 設定 ----
 const configPath = () => path.join(app.getPath('userData'), 'config.json');
-const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false, quiet: defaultQuiet, updateCheck: true, notifiedUpdate: '' };
+const defaultConfig = { regions: { tokyo: true, 'us-east': false }, paused: false, notify: true, showAll: false, gamePath: '', autoLaunch: true, filter: defaultFilter, hosts: defaultHosts, notifyVacancy: false, quiet: defaultQuiet, updateCheck: true, notifiedUpdate: '', autoClearNotifications: true };
 let config = structuredClone(defaultConfig);
 
 function loadConfig() {
@@ -95,11 +98,12 @@ let isQuitting = false;
 let joinPhase = '';              // 参加処理の進み具合(画面表示用)
 let update = null;               // 新しいバージョン { version, url }
 let lastNotify = null;           // 最後に出そうとした通知の結果(不具合調査用)
-const activeNotifications = new Set(); // GCで通知のクリックハンドラが消えないよう参照を保持
+const activeNotifications = new Map(); // 通知 -> 部屋のキー。GCで通知のクリックハンドラが消えないよう参照を保持
 
 // ---- 通知 ----
 // onClick 省略時はウィンドウを開く。buttons: [{ text, onClick }] 通知に並べるボタン
-function notify(title, body, onClick = showWindow, buttons = []) {
+// roomKeys: この通知が知らせている部屋。部屋がなくなったら通知を自動で消すのに使う
+function notify(title, body, onClick = showWindow, buttons = [], roomKeys = []) {
   if (!Notification.isSupported()) {
     lastNotify = { time: Date.now(), ok: false, message: 'このPCでは通知が使えません' };
     sendState();
@@ -116,9 +120,45 @@ function notify(title, body, onClick = showWindow, buttons = []) {
   });
   n.on('show', () => { lastNotify = { time: Date.now(), ok: true, message: title }; sendState(); });
   n.on('failed', (_e, error) => { lastNotify = { time: Date.now(), ok: false, message: String(error) }; sendState(); });
-  n.on('close', () => activeNotifications.delete(n));
-  activeNotifications.add(n);
+  // 画面から消えて通知センターに移ったあとも、クリックや削除ができるよう参照を持ち続ける
+  activeNotifications.set(n, roomKeys);
+  if (activeNotifications.size > MAX_KEPT_NOTIFICATIONS) activeNotifications.delete(activeNotifications.keys().next().value);
   n.show();
+}
+
+// 部屋が閉じた・始まった・満員になったら、その部屋の通知を通知センターから消す
+function clearStaleNotifications() {
+  if (!config.autoClearNotifications) return;
+  const live = new Set();
+  for (const st of Object.values(regionState)) for (const r of st.rooms) if (r.joinable) live.add(r.key);
+  for (const [n, keys] of activeNotifications) {
+    if (keys.length && !keys.some((k) => live.has(k))) {
+      n.close();
+      activeNotifications.delete(n);
+    }
+  }
+}
+
+function clearNotificationsForRoom(key) {
+  for (const [n, keys] of activeNotifications) {
+    if (keys.includes(key)) {
+      n.close();
+      activeNotifications.delete(n);
+    }
+  }
+}
+
+// このアプリの通知をすべて消す。前回起動したときの通知は参照がないので、Windowsの通知履歴APIで消す
+function clearAllNotifications() {
+  for (const n of activeNotifications.keys()) n.close();
+  activeNotifications.clear();
+  const ps = '[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] > $null; ' +
+    `[Windows.UI.Notifications.ToastNotificationManager]::History.Clear('${appUserModelId().replace(/'/g, "''")}')`;
+  return new Promise((resolve) => {
+    execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { windowsHide: true, timeout: 15000 }, (err) => {
+      resolve(err ? { ok: false, message: '通知センターの通知を消せませんでした。' } : { ok: true, message: '通知をすべて消しました。' });
+    });
+  });
 }
 
 // kind: 'new' = 新しく条件に合った部屋、'vacancy' = 満員だった部屋に空きが出た
@@ -128,7 +168,7 @@ function notifyNewRooms(rooms, kind = 'new') {
   if (rooms.length > MAX_INDIVIDUAL) {
     const names = rooms.slice(0, 5).map((r) => r.roomName).join('、');
     const head = kind === 'vacancy' ? `${rooms.length}件の部屋に空きが出ました` : `新しい部屋が${rooms.length}件開かれました`;
-    notify(head, `${names}${rooms.length > 5 ? ' ほか' : ''}\nクリックで一覧を開く`);
+    notify(head, `${names}${rooms.length > 5 ? ' ほか' : ''}\nクリックで一覧を開く`, showWindow, [], rooms.map((r) => r.key));
     return;
   }
   for (const r of rooms) {
@@ -142,7 +182,8 @@ function notifyNewRooms(rooms, kind = 'new') {
         { text: '参加', onClick: () => requestJoin(r.key) },
         { text: 'コードをコピー', onClick: () => clipboard.writeText(r.code) },
         { text: '一覧を開く', onClick: showWindow },
-      ]
+      ],
+      [r.key]
     );
   }
 }
@@ -191,6 +232,7 @@ async function requestJoin(key) {
   setPhase('部屋に参加しています');
   try {
     const result = await joinWithLaunch(entry);
+    if (result.ok) clearNotificationsForRoom(key); // 参加できた部屋の通知はもう要らない
     const name = describeRoom(entry.regionKey, entry.game).roomName;
     // 画面が見えていないときは通知で結果を伝える
     if (!result.ok && !(win && win.isVisible())) notify(`参加できませんでした: ${name}`, result.message);
@@ -272,6 +314,7 @@ async function poll() {
   lastChecked = new Date();
   notifyNewRooms(results.flatMap((r) => r.fresh));
   notifyNewRooms(results.flatMap((r) => r.vacancy), 'vacancy');
+  clearStaleNotifications();
   updateTray();
   sendState();
 }
@@ -292,6 +335,11 @@ function resetRegion(key) {
   st.rooms = [];
   st.initialized = false;
   st.error = null;
+}
+
+// Windowsのトースト通知にはAppUserModelIDが必要。開発実行時はexeパスを使う
+function appUserModelId() {
+  return app.isPackaged ? APP_ID : process.execPath;
 }
 
 // ---- アップデートの確認 ----
@@ -387,6 +435,13 @@ function setQuiet(value) {
   config.quiet = sanitizeQuiet(value);
   saveConfig();
   updateTray();
+  sendState();
+}
+
+function setAutoClearNotifications(value) {
+  config.autoClearNotifications = !!value;
+  saveConfig();
+  if (config.autoClearNotifications) clearStaleNotifications();
   sendState();
 }
 
@@ -501,6 +556,7 @@ function updateTray() {
     { label: '画面を開く', click: showWindow },
     { label: 'Among Usを起動', click: async () => { const r = await startGame(); if (!r.ok) notify('起動できませんでした', r.message); } },
     { type: 'separator' },
+    { label: '通知をすべて消す', click: () => clearAllNotifications() },
     { label: '一時停止', type: 'checkbox', checked: config.paused, click: (i) => setPaused(i.checked) },
     { type: 'separator' },
     ...(update ? [{ label: `新しいバージョン v${update.version} をダウンロード`, click: openUpdatePage }] : []),
@@ -522,6 +578,8 @@ ipcMain.handle('set-hosts', (_e, v) => setHosts(v));
 ipcMain.handle('set-notify-vacancy', (_e, v) => setNotifyVacancy(v));
 ipcMain.handle('set-quiet', (_e, v) => setQuiet(v));
 ipcMain.handle('set-update-check', (_e, v) => setUpdateCheck(v));
+ipcMain.handle('set-auto-clear', (_e, v) => setAutoClearNotifications(v));
+ipcMain.handle('clear-notifications', () => clearAllNotifications());
 ipcMain.handle('open-update', () => openUpdatePage());
 ipcMain.handle('choose-game-path', () => chooseGamePath());
 ipcMain.handle('launch-game', () => startGame());
@@ -535,8 +593,7 @@ ipcMain.handle('open-notify-settings', () => shell.openExternal('ms-settings:not
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
-  // Windowsのトースト通知にはAppUserModelIDが必要。開発実行時はexeパスを使う
-  app.setAppUserModelId(app.isPackaged ? APP_ID : process.execPath);
+  app.setAppUserModelId(appUserModelId());
 
   // 2つ目を起動しようとしたら、既存の画面を前に出す
   app.on('second-instance', showWindow);

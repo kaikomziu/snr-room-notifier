@@ -66,6 +66,7 @@
         <legend>動作</legend>
         <label class="check"><input type="checkbox" id="notify-toggle"> 新しい部屋が開かれたら通知する</label>
         <label class="check"><input type="checkbox" id="vacancy-toggle"> 満員の部屋に空きが出たら通知する</label>
+        <label class="check"><input type="checkbox" id="auto-clear-toggle"> 閉じた・始まった・満員になった部屋の通知を自動で消す</label>
         <div class="quiet-row">
           <label class="check"><input type="checkbox" id="quiet-toggle"> 静かな時間帯は通知しない</label>
           <span class="inline">
@@ -118,6 +119,7 @@
       <p class="note" id="notify-status">まだ通知は出ていません。</p>
       <div class="actions">
         <button class="ghost" id="test-btn" type="button">テスト通知を出す</button>
+        <button class="ghost" id="clear-btn" type="button">通知をすべて消す</button>
         <button class="ghost" id="site-btn" type="button">公式のルーム一覧を開く</button>
       </div>
       <p class="about">
@@ -170,6 +172,11 @@
       <details class="qa">
         <summary>夜中は通知してほしくない</summary>
         <p>「設定」タブの「静かな時間帯は通知しない」をオンにして、時間を指定してください。23:00〜07:00 のように日をまたぐ指定もできます。静かな時間帯の間も監視は続き、部屋は一覧に表示されます(時間帯が明けてからまとめて通知はしません)。</p>
+      </details>
+      <details class="qa">
+        <summary>放置している間にたまった通知を消したい</summary>
+        <p>閉じた・始まった・満員になった部屋の通知は、自動で通知センターから消えます(「設定」タブでオフにできます)。参加できた部屋の通知も消えます。</p>
+        <p>まとめて消すときは、「設定」タブの「通知をすべて消す」か、タスクトレイのアイコンを右クリックして「通知をすべて消す」を選んでください。前回起動したときの通知も消えます。</p>
       </details>
       <details class="qa">
         <summary>通知が1件にまとめられた</summary>

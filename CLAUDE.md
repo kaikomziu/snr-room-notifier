@@ -3,7 +3,7 @@
 Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部屋が開かれたら Windows 通知を出し、通知や一覧からそのまま参加できる Windows 常駐アプリ(Electron)。
 
 - GitHub: https://github.com/kaikomziu/snr-room-notifier(public、main ブランチ、GPL-3.0-only)
-- 現在: v1.11.0(2026-09-27)
+- 現在: v1.12.0(2026-09-27)
 - 技術: Electron 44 / electron-builder 26(NSIS、oneClick、per-user)。ランタイム依存パッケージなし
 - 起動: `npm start` / ビルド: `npm run dist`(dist/ に出力)
 
@@ -15,6 +15,7 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - `lib/game.js` — Among Us.exe 起動、MOD ローカルAPIの起動確認(TCP接続のみ)
 - `lib/filter.js` — 通知の条件、お気に入り/ミュートのホスト、静かな時間帯(sanitize と判定)
 - `lib/update.js` — GitHub Releases で新しいバージョンを確認
+- 通知の削除: 通知は部屋キーと一緒に `activeNotifications`(Map)で保持し、部屋が参加不可になったら `close()` で通知センターからも消す。「通知をすべて消す」は PowerShell で `ToastNotificationManager.History.Clear(AUMID)` を呼ぶ(前回起動分も消える。ネット通信なし)
 - 通知の仕組み: 部屋ごとに `notified` を持ち、「募集中かつ条件に合った」最初の時点で1回通知。起動直後・再開直後・条件変更直後に既に合っている部屋は通知済み扱い(連打防止)
 - `renderer/index.html` / `style.css` / `app.js` — 画面(部屋タブ・設定タブ)。CSP は `'self'` のみ
 - `assets/` — 独自デザインのアイコン(ベル+赤ドット)。Windows 通知が asar 内画像を読めないため package.json の `asarUnpack` で asar 外に置いている

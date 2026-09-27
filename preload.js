@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld('snr', {
   setQuiet: (v) => ipcRenderer.invoke('set-quiet', v),
   setUpdateCheck: (v) => ipcRenderer.invoke('set-update-check', v),
   openUpdate: () => ipcRenderer.invoke('open-update'),
+  setAutoClear: (v) => ipcRenderer.invoke('set-auto-clear', v),
+  clearNotifications: () => ipcRenderer.invoke('clear-notifications'),
   chooseGamePath: () => ipcRenderer.invoke('choose-game-path'),
   launchGame: () => ipcRenderer.invoke('launch-game'),
   setAutoLaunch: (v) => ipcRenderer.invoke('set-auto-launch', v),

@@ -148,6 +148,7 @@ function renderSettings() {
   $('notify-toggle').checked = state.config.notify;
   $('vacancy-toggle').checked = state.config.notifyVacancy;
   $('vacancy-toggle').disabled = !state.config.notify;
+  $('auto-clear-toggle').checked = state.config.autoClearNotifications;
   $('quiet-toggle').checked = state.config.quiet.enabled;
   for (const k of ['start', 'end']) {
     const input = $(`quiet-${k}`);
@@ -292,6 +293,11 @@ for (const id of ['quiet-toggle', 'quiet-start', 'quiet-end']) {
 }
 $('login-toggle').addEventListener('change', (e) => window.snr.setLogin(e.target.checked));
 $('test-btn').addEventListener('click', () => window.snr.testNotify());
+$('auto-clear-toggle').addEventListener('change', (e) => window.snr.setAutoClear(e.target.checked));
+$('clear-btn').addEventListener('click', async () => {
+  const r = await window.snr.clearNotifications();
+  toast(r.message, r.ok ? 'info' : 'error');
+});
 $('choose-path-btn').addEventListener('click', () => window.snr.chooseGamePath());
 for (const id of ['filter-maps', 'filter-impostors', 'filter-min', 'filter-keywords']) {
   $(id).addEventListener('change', () => window.snr.setFilter(readFilter()));
