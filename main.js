@@ -23,6 +23,7 @@
 //   v1.10.0 (2026-09-27) 部屋一覧に検索(部屋名・コード・マップ)と並べ替え(人数・新しい順・部屋名・マップ)を追加。お気に入りを上に表示
 //   v1.11.0 (2026-09-27) 新しいバージョンのお知らせを追加(GitHubのReleasesを6時間ごとに確認、画面上部・トレイ・通知で案内、設定でオフ可)
 //   v1.12.0 (2026-09-27) 閉じた・始まった・満員になった部屋の通知を自動で消す(設定でオフ可)、参加できた部屋の通知も消す。「通知をすべて消す」ボタン(設定タブ・トレイ)
+//   v1.12.1 (2026-09-27) クレジットを追加(制作者 かるわか / コード Claude / 原作 Among Us・SuperNewRoles)
 
 const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, ipcMain, dialog, clipboard } = require('electron');
 const path = require('path');
@@ -34,7 +35,7 @@ const { isGameRunning, launchGame, waitForGame, checkExePath } = require('./lib/
 const { FILTER_MAPS, defaultFilter, sanitizeFilter, filterIsActive, defaultHosts, sanitizeHosts, shouldNotify, defaultQuiet, sanitizeQuiet, isQuietNow } = require('./lib/filter');
 const { fetchNewerRelease, RELEASES_PAGE } = require('./lib/update');
 
-const APP_VERSION = '1.12.0';
+const APP_VERSION = '1.12.1';
 const APP_UPDATED = '2026-09-27';
 const APP_ID = 'com.kaikomziu.snr-room-notifier';
 const POLL_MS = 10000;          // 監視間隔(公式サイトは5秒。負荷を考えて10秒)

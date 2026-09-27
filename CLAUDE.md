@@ -3,7 +3,7 @@
 Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部屋が開かれたら Windows 通知を出し、通知や一覧からそのまま参加できる Windows 常駐アプリ(Electron)。
 
 - GitHub: https://github.com/kaikomziu/snr-room-notifier(public、main ブランチ、GPL-3.0-only)
-- 現在: v1.12.0(2026-09-27)
+- 現在: v1.12.1(2026-09-27)
 - 技術: Electron 44 / electron-builder 26(NSIS、oneClick、per-user)。ランタイム依存パッケージなし
 - 起動: `npm start` / ビルド: `npm run dist`(dist/ に出力)
 
@@ -40,6 +40,7 @@ Among Us の MOD「SuperNewRoles(SNR)」のカスタムサーバーで公開部�
 - SNR 関連で使うエンドポイントは **3つだけ**(all_for_web ×2、localhost の joinGame)。増やす場合は SNR 開発者への報告が必要なので **先にユーザーに確認**
   - SNR 以外では v1.11.0 からアップデート確認で `https://api.github.com/repos/kaikomziu/snr-room-notifier/releases/latest` を6時間ごとに使う(ユーザー承認済み、`lib/update.js`)
 - 「非公式ツール」の明記(README 冒頭、設定タブの免責事項)を消さない
+- クレジット(README「クレジット」、設定タブ): 制作者 かるわか / コード Claude / 原作 Among Us(Innersloth LLC)・SuperNewRoles(SuperNewRoles 開発チーム)。消さない
 - 「AI(Claude Code)で作成している」明記(README 冒頭と「開発」、設定タブの免責事項)も消さない
 - Among Us のキャラクター(クルー)など Innersloth / SNR の素材は使わない
 - 変更のたびにバージョンと日付を記録し、次の **4か所をすべて揃える**:

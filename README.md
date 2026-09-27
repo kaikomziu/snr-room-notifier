@@ -56,12 +56,23 @@ npm run dist     # インストーラー作成(dist/ に出力)
 
 Electron 44 / electron-builder 26 で作成しています。コードは AI(Claude Code)で作成しています。
 
+## クレジット
+
+| | |
+|---|---|
+| 制作者 | かるわか |
+| コード | Claude(Anthropic の Claude Code) |
+| 原作 | [Among Us](https://www.innersloth.com/games/among-us/)(Innersloth LLC)/ [SuperNewRoles](https://github.com/SuperNewRoles/SuperNewRoles)(SuperNewRoles 開発チーム) |
+
+原作の各作品とこのアプリは関係がなく、承認や支援も受けていません(非公式ツールです)。
+
 ## ライセンス
 
 [GPL-3.0](LICENSE)
 
 ## 更新履歴
 
+- v1.12.1 (2026-09-27) クレジットを追加(制作者 かるわか / コード Claude / 原作 Among Us・SuperNewRoles)
 - v1.12.0 (2026-09-27) 閉じた・始まった・満員になった部屋の通知を自動で消すように。「通知をすべて消す」ボタンを追加(設定タブ・トレイ)
 - v1.11.0 (2026-09-27) 新しいバージョンのお知らせを追加(GitHub の Releases を 6 時間ごとに確認。設定でオフにできます)
 - v1.10.0 (2026-09-27) 部屋一覧に検索と並べ替えを追加。お気に入りの部屋を上に表示

@@ -165,6 +165,11 @@ legend { padding: 0 6px; font-weight: 700; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .about { color: var(--muted); font-size: 13px; max-width: 36em; }
 .version { color: var(--muted); font-size: 12px; }
+.credits { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 8px; font-size: 13px; max-width: 40em; }
+.credits h2 { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+.credits dl { display: grid; grid-template-columns: 5em 1fr; gap: 4px 8px; margin: 0; }
+.credits dt { color: var(--muted); }
+.credits dd { margin: 0; }
 .disclaimer { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 8px; color: var(--muted); font-size: 12px; max-width: 40em; }
 .disclaimer p { margin: 6px 0; }
 
